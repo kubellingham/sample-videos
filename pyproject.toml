@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "satisfy"
+version = "0.1.0"
+description = "Oddly satisfying vertical videos (YouTube Shorts) from deterministic physics simulations"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pymunk>=7.0",
+    "PyYAML>=6.0",
+    "skia-python>=87.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+satisfy = "satisfy.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["satisfy*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

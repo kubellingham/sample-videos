@@ -1,0 +1,12 @@
+format: shrinking_ring
+seed: 3
+palette: sunset
+sound_set: melody
+duration: 40
+hook_text: "Every bounce plays the next note"
+
+sound:
+  melody: ode_to_joy     # or random; see `python -m satisfy sounds`
+
+params:
+  mode: grow

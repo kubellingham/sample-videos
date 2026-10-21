@@ -1,0 +1,11 @@
+format: shrinking_ring
+seed: 1
+palette: candy
+sound_set: tactile
+duration: 40
+hook_text: "Every bounce adds a ball. Can they escape?"
+
+params:
+  mode: spawn
+  spawn_from: hero       # hero: only the first ball's bounces spawn | any (rate-limited)
+  spin: [0.6, 2.5]       # slower rotation: with many balls the gap is found fast
