@@ -108,6 +108,7 @@ class Simulation:
         self.rng = random.Random(f"{self.name}:{cfg.seed}:{variant}")
         self.timeline = Timeline()
         self.plan: Timeline | None = None  # rehearsal of this exact run (None while rehearsing)
+        self.duration = float(cfg.duration)  # video length limit; setup() may change it (e.g. to fit a cycle)
         self.outro = float(self.p.outro)
         self.loop_xfade = max(0.0, float(self.p.loop_xfade))
         self.tail = self.outro + self.loop_xfade
@@ -185,6 +186,15 @@ class Simulation:
         """Record an audible event at the end of the current step (video time)."""
         return self.timeline.add(Event(t=self.vt_next, kind=kind, x=x, y=y, strength=strength, data=data))
 
+    def load_score(self):
+        """The MIDI score named by the config's ``sound: {midi: ...}``, or None."""
+        path = (self.cfg.sound or {}).get("midi")
+        if not path:
+            return None
+        from ..audio import midi
+
+        return midi.load(path)
+
     def finish(self, kind: str) -> None:
         """End the video: the ending holds for ``outro`` seconds, then loops back."""
         if self.end_t is None:
@@ -203,8 +213,8 @@ class Simulation:
         nothing and return just the :class:`Timeline`."""
         hz = PHYSICS_HZ
         dt = 1.0 / hz
-        max_t = float(self.cfg.duration)
         self.setup()
+        max_t = self.duration
         frames: list[Scene] = []
         prelude: list[Scene] = []
         n = math.ceil(self._ticks * fps / hz) if fps else 0  # next frame index (< 0: pre-roll)

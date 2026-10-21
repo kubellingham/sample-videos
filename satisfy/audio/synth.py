@@ -35,7 +35,16 @@ def _bar(freq: float, vel: float, partials, dur: float, attack: float = 0.0015,
             continue
         out += amp * np.sin(2 * np.pi * f * t) * np.exp(-t / (decay * pitch_k))
     out *= _attack(t, attack)
-    return out * vel
+    return _fade_tail(out) * vel
+
+
+def _fade_tail(sig: np.ndarray, seconds: float = 0.3) -> np.ndarray:
+    """Fade the last ``seconds`` of a voice to zero: voices are cut at a fixed
+    length while still faintly ringing, and a hard cut would tick."""
+    n = min(len(sig), int(seconds * SR))
+    if n:
+        sig[-n:] *= 0.5 + 0.5 * np.cos(np.linspace(0.0, np.pi, n))
+    return sig
 
 
 def marimba(freq: float, vel: float = 1.0) -> np.ndarray:
@@ -67,7 +76,99 @@ def chime(freq: float, vel: float = 1.0) -> np.ndarray:
     return sig
 
 
-INSTRUMENTS = {"marimba": marimba, "glock": glock, "kalimba": kalimba, "pluck": pluck, "chime": chime}
+def _norm(sig: np.ndarray, vel: float) -> np.ndarray:
+    return _fade_tail(sig / (np.abs(sig).max() + 1e-12)) * vel
+
+
+def _thud(dur: float, cutoff: float, seed: int) -> np.ndarray:
+    """A short, low-passed noise burst: felt or a hammer meeting a string or bar."""
+    rng = np.random.default_rng(seed)
+    n = int(dur * SR)
+    spec = np.fft.rfft(rng.normal(0, 1, n))
+    f = np.fft.rfftfreq(n, 1 / SR)
+    spec /= 1.0 + (f / cutoff) ** 2
+    sig = np.fft.irfft(spec, n)
+    t = np.arange(n) / SR
+    return sig / (np.abs(sig).max() + 1e-12) * np.exp(-t / (dur / 4)) * _attack(t, 0.0008)
+
+
+def music_box(freq: float, vel: float = 1.0) -> np.ndarray:
+    """Steel comb tine plucked by a pin: a clear fundamental with a faint
+    shimmer (two slightly detuned tine modes), a bright inharmonic overtone
+    near 6x, and the tick of the pin."""
+    pk = (523.0 / max(freq, 20.0)) ** 0.4  # lower tines ring longer
+    t = _t(3.2)
+    out = np.zeros_like(t)
+    for ratio, amp, decay in ((1.0, 1.0, 1.7), (1.0015, 0.22, 1.2), (2.0, 0.05, 0.5),
+                              (5.93, 0.26, 0.22), (6.02, 0.1, 0.16), (17.4, 0.05, 0.04)):
+        f = freq * ratio
+        if f < SR * 0.45:
+            out += amp * np.sin(2 * np.pi * f * t) * np.exp(-t / (decay * pk))
+    out *= _attack(t, 0.0006)
+    tick = click(1.0, bright=1.0, seed=int(freq))
+    out[: len(tick)] += 0.25 * tick
+    return _norm(out, vel)
+
+
+def celesta(freq: float, vel: float = 1.0) -> np.ndarray:
+    """Felt hammer on a steel bar over a wooden resonator: a sweet, nearly pure
+    tone (the resonator reinforces the fundamental) with a quick bright onset."""
+    pk = (440.0 / max(freq, 20.0)) ** 0.35
+    t = _t(2.8)
+    out = np.zeros_like(t)
+    for ratio, amp, decay in ((1.0, 1.0, 1.25), (2.0, 0.11, 0.45), (2.76, 0.16, 0.14),
+                              (4.0, 0.03, 0.12), (5.40, 0.06, 0.045)):
+        f = freq * ratio
+        if f < SR * 0.45:
+            out += amp * np.sin(2 * np.pi * f * t + 0.3 * ratio) * np.exp(-t / (decay * pk))
+    out *= _attack(t, 0.0012)
+    hammer = _thud(0.012, 2500.0, seed=int(freq) + 1)
+    out[: len(hammer)] += 0.06 * hammer
+    return _norm(out, vel)
+
+
+def felt_piano(freq: float, vel: float = 1.0) -> np.ndarray:
+    """Upright piano with a felt strip between hammers and strings: soft
+    attack, few and quickly fading upper partials, two-stage decay (prompt
+    sound, then a long aftersound), two slightly detuned strings per note."""
+    pk = (261.6 / max(freq, 20.0)) ** 0.45
+    t = _t(4.5)
+    out = np.zeros_like(t)
+    rng = np.random.default_rng(int(freq * 10))
+    b = 0.00025  # string stiffness: partials stretch slightly sharp
+    for n in range(1, 16):
+        f = n * freq * np.sqrt(1 + b * n * n)
+        if f > 7000:
+            break
+        amp = n ** -1.35 * np.exp(-f / 1700.0)  # felt mutes the highs
+        fast = 0.32 * pk / (1 + 0.3 * (n - 1))
+        slow = 3.0 * pk / (1 + 0.5 * (n - 1))
+        env = 0.62 * np.exp(-t / fast) + 0.38 * np.exp(-t / slow)
+        phase = rng.uniform(0, 2 * np.pi)  # both strings are struck together: same phase, slow beating
+        for cents in (-0.7, 0.7):
+            fc = f * 2 ** (cents / 1200)
+            out += 0.5 * amp * np.sin(2 * np.pi * fc * t + phase) * env
+    out *= _attack(t, 0.005) ** 2  # felt: a softer onset
+    felt = _thud(0.03, 450.0, seed=int(freq) + 2)
+    out[: len(felt)] += 0.09 * felt * np.abs(out).max()
+    return _norm(out, vel)
+
+
+def bass(freq: float, dur: float, vel: float = 1.0) -> np.ndarray:
+    """Soft round bass note: a few harmonics (so phone speakers still hear the
+    pitch), gentle attack, natural decay, released at ``dur``."""
+    rel = 0.18
+    t = _t(dur + rel)
+    out = np.zeros_like(t)
+    for n, amp in ((1, 1.0), (2, 0.5), (3, 0.2), (4, 0.07)):
+        out += amp * np.sin(2 * np.pi * freq * n * t) * np.exp(-t / (1.8 / (1 + 0.6 * (n - 1))))
+    out *= _attack(t, 0.012)
+    out *= np.clip((dur + rel - t) / rel, 0.0, 1.0)  # release
+    return _norm(out, vel)
+
+
+INSTRUMENTS = {"marimba": marimba, "glock": glock, "kalimba": kalimba, "pluck": pluck, "chime": chime,
+               "music_box": music_box, "celesta": celesta, "felt_piano": felt_piano}
 
 
 def click(vel: float = 1.0, bright: float = 1.0, seed: int = 0) -> np.ndarray:
@@ -201,11 +302,14 @@ class Mixer:
         if send:
             self.wet_send[:, start:end] += chunk * send
 
-    def finish(self, reverb_mix: float = 0.2, reverb_time: float = 1.8, seed: int = 0) -> np.ndarray:
+    def finish(self, reverb_mix: float = 0.2, reverb_time: float = 1.8, seed: int = 0,
+               mastered: bool = True) -> np.ndarray:
+        """The mix with reverb; ``mastered=False`` skips :func:`master` (the
+        caller masters it, e.g. after cutting one cycle out of a loop)."""
         out = self.dry.copy()
         if reverb_mix > 0 and np.any(self.wet_send):
             out += reverb(self.wet_send, reverb_time, seed) * reverb_mix
-        return master(out)
+        return master(out) if mastered else out
 
 
 def reverb(x: np.ndarray, rt60: float = 1.8, seed: int = 0) -> np.ndarray:

@@ -1,0 +1,19 @@
+# polyrhythm_loop on the harmony engine: 12 rings whose hits all land on a
+# 16th-note grid; the chord progression plays exactly once per cycle. The
+# cycle length and tempo are fitted to the duration (here: 12 bars of 4/4 at
+# 72 BPM = 40 s for a four-chord progression).
+format: polyrhythm_loop
+seed: 1
+palette: aurora
+sound_set: harmony
+duration: 45             # target; the cycle is fitted to the music
+hook_text: "Every dot is on the beat"
+
+sound:
+  key: C
+  progression: I-V-vi-IV # vi-IV-I-V | ii-V-I | random | any roman numerals
+  tempo: auto            # 70-90 BPM, fitted so the cycle is a whole number of bars
+  instrument: celesta    # music_box | celesta | felt_piano | kalimba | ...
+
+params:
+  rings: 12

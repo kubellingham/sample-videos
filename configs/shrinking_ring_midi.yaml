@@ -1,0 +1,16 @@
+# shrinking_ring choreographed to a MIDI file: the ball bounces exactly on the
+# score's notes (and plays them). The video ends on the last note: the ball
+# pops to fill the ring, or flies out through the gap (midi_ending).
+format: shrinking_ring
+seed: 3
+palette: sunset
+sound_set: harmony
+duration: 45             # the score sets the length (here 16 bars at 100 BPM)
+hook_text: "Ode to Joy, one bounce per note"
+
+sound:
+  midi: assets/midi/ode_to_joy.mid
+  instrument: music_box
+
+params:
+  midi_ending: auto      # trapped | escape | auto (from the seed)

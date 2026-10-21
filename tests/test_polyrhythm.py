@@ -100,3 +100,66 @@ def test_exact_audio_timing_is_sample_accurate():
     audio = np.abs(render_audio(tl, "pentatonic", {}, 1, 15, 45)).max(axis=0)
     start = round(t * SR)
     assert audio[: start - 1].max() < 1e-3 and audio[start: start + 96].max() > 0.05
+
+
+# ------------------------------------------------------------- 16th-note grid
+def _grid_cfg(**sound):
+    return VideoConfig(format="polyrhythm_loop", seed=1, sound_set="harmony", duration=45.0,
+                       sound=sound, params={"rings": 12})
+
+
+def test_grid_hits_land_on_sixteenths_and_the_progression_fills_the_cycle():
+    from satisfy.formats.polyrhythm_loop import PolyrhythmLoop
+
+    res = _sim(_grid_cfg(), 15)
+    tl, m = res.timeline, res.timeline.music
+    assert tl.periodic and m["tempo"] == pytest.approx(72) and m["bars"] == 12
+    assert res.length == pytest.approx(m["cycle"]) == pytest.approx(40.0) and res.n_frames == 600
+    sixteenth = m["cycle"] / m["sixteenths"]
+    assert all(abs(e.t / sixteenth - round(e.t / sixteenth)) < 1e-9 for e in tl.events)
+    assert [c["name"] for c in m["chords"]] == ["I", "V", "vi", "IV"]  # exactly once per cycle
+    assert [c["t"] for c in m["chords"]] == pytest.approx([0, 10, 20, 30])  # 3 bars each
+    sim = PolyrhythmLoop(_grid_cfg(), resolve("aurora", 1))
+    sim.setup()
+    assert all(m["sixteenths"] % laps == 0 for laps in sim.laps) and len(set(sim.laps)) == 12
+    assert sim.laps == sorted(sim.laps)  # outer rings slowest
+
+
+def test_grid_fit_other_progressions_and_tempos():
+    from satisfy.formats.polyrhythm_loop import fit_grid
+
+    tempo, bars, laps = fit_grid(45.0, 12, 3)  # ii-V-I: 15 bars at 80 BPM is exactly 45 s
+    assert (tempo, bars) == (80.0, 15) and all(240 % v == 0 for v in laps)
+    tempo, bars, _ = fit_grid(45.0, 12, 4, tempo=75.0)  # a fixed tempo is kept (to within 1%)
+    assert tempo == pytest.approx(75.0, rel=0.01) and (240 * bars / tempo * 15) % 1 == pytest.approx(0, abs=1e-9)
+    assert fit_grid(45.0, 3, 4, laps=[4, 6, 8])[2] == [4, 6, 8]
+    with pytest.raises(ValueError, match="16th-note cycle"):
+        fit_grid(45.0, 3, 4, laps=[3, 4, 5])  # needs 60 bars: far too long
+
+
+def test_harmony_loop_wraps_around_seamlessly():
+    """The periodic harmony render (pad, bass, chord-tone hits, tails) equals the
+    middle of three back-to-back cycles playing the same notes."""
+    from dataclasses import replace
+
+    from satisfy.audio.sound_sets import get
+
+    cfg = VideoConfig(format="polyrhythm_loop", seed=2, sound_set="harmony", duration=20.0,
+                      params={"rings": 5, "min_interval": 4})
+    res = _sim(cfg, 15)
+    tl, n_frames = res.timeline, res.n_frames
+    L = res.length
+    loop = render_audio(tl, "harmony", {}, 2, 15, n_frames)
+    s = get("harmony")({}, 2)
+    s.prepare(tl)
+    assigned = s.assign(tl)  # the pitches the loop plays (shared by every cycle)
+    three = [replace(e, t=e.t + c * L) for c in range(3) for e in assigned.events]
+    cont_tl = replace(tl, events=three, periodic=False, length=3 * L, end_t=3 * L, ending="none", loop_t=0.0)
+    cont = render_audio(cont_tl, "harmony", {}, 2, 15, 3 * n_frames)
+    n = n_frames * SR // 15
+    mid = cont[:, n: 2 * n]
+    scale = float(np.sum(mid * loop) / np.sum(loop * loop))
+    peak = np.abs(loop).max()
+    assert np.abs(mid - scale * loop).max() < 0.01 * peak
+    looped = np.concatenate([loop[:, -SR // 10:], loop[:, : SR // 2]], axis=1) * scale
+    assert np.abs(looped - cont[:, 2 * n - SR // 10: 2 * n + SR // 2]).max() < 0.005 * peak

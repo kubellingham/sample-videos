@@ -28,6 +28,7 @@ class Circle:
     outline_width: float = 0.0
     id: int | None = None  # stable id across frames (enables trails)
     trail: float = 0.0  # trail length in seconds (needs id)
+    path: list | None = None  # explicit trail, oldest point first (else sampled from earlier frames)
 
 
 @dataclass(slots=True)

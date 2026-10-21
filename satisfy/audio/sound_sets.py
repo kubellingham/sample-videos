@@ -5,11 +5,18 @@ audio sample where their frame starts (48 kHz divides evenly by the frame
 rate), so sound and picture line up to the frame.
 
 A config picks a set with ``sound_set`` and can tune it with a ``sound:``
-mapping (keys listed in each class's ``options``).
+mapping (keys listed in each class's ``options``). Every set also takes
+``midi`` (a MIDI file whose notes give the pitches: formats that can
+choreograph put their hits on the score's note times, others play the score
+one note group per hit), ``loudness`` (target LUFS), ``min_gap`` and ``volume``.
+
+A hit event can carry its own pitches as ``data["notes"]`` = [[midi, gain],
+...]; the set then plays exactly those (MIDI-choreographed formats do this).
 """
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import replace
 from types import SimpleNamespace
@@ -17,7 +24,8 @@ from types import SimpleNamespace
 import numpy as np
 
 from ..timeline import Event, Timeline, frame_of
-from . import synth
+from . import harmony as harmony_mod
+from . import loudness, midi, synth
 from .melodies import MELODIES, key_to_pc, melody_midi, midi_to_hz
 from .synth import SR, Mixer
 
@@ -25,6 +33,12 @@ KEYS = ["C", "D", "E", "F", "G", "A"]
 LOW_HZ = 200.0  # octave_up: auto shifts patterns whose lowest note is below this
 SCALES = {"major": [0, 2, 4, 7, 9], "minor": [0, 3, 5, 7, 10]}
 TRIADS = {"major": [0, 4, 7, 12], "minor": [0, 3, 7, 12]}
+HITS = ("bounce", "note")  # events that play a pitch
+
+
+def midi_gain(vel: int) -> float:
+    """MIDI velocity (1..127) -> voice gain."""
+    return 0.3 + 0.7 * max(0, min(127, int(vel))) / 127.0
 
 
 class SoundSet:
@@ -33,9 +47,10 @@ class SoundSet:
     options: dict = {}
     reverb_mix = 0.22
     reverb_time = 1.8
+    lufs: float | None = None  # loudness target; None: the classic RMS master
 
     def __init__(self, opts: dict, seed: int):
-        known = {"min_gap": 0.055, "volume": 1.0, **self.options}
+        known = {"min_gap": 0.055, "volume": 1.0, "midi": None, "loudness": None, **self.options}
         unknown = set(opts) - set(known)
         if unknown:
             raise ValueError(f"Unknown options for sound set '{self.name}': {', '.join(sorted(unknown))}. "
@@ -44,6 +59,7 @@ class SoundSet:
         self.seed = seed
         self.rng = random.Random(f"sound:{self.name}:{seed}")
         self._cache: dict = {}
+        self.score = midi.load(self.o.midi) if self.o.midi else None
         self.setup()
 
     # -- hooks for subclasses ---------------------------------------------
@@ -74,6 +90,38 @@ class SoundSet:
     def play(self, mix: Mixer, midi: int, start: int, vel: float, pan: float = 0.0, send: float = 1.0) -> None:
         mix.add(self.voice(midi), start, gain=vel, pan=pan, send=send)
 
+    def play_notes(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        """Play the pitches an event carries (``data["notes"]``: [[midi, gain], ...])."""
+        for m, gain in e.data["notes"]:
+            self.play(mix, int(m), start, float(gain), pan)
+
+    def assign(self, timeline: Timeline) -> Timeline:
+        """Decide the pitches of hits that do not carry their own. With a MIDI
+        score, each hit plays the next note group of the score. Returns a new
+        timeline (events copied); hits closer than ``min_gap`` stay silent."""
+        if self.score is None:
+            return timeline
+        groups = self.score.onsets()
+        out, last, k = [], -1e9, 0
+        for e in sorted(timeline.events, key=lambda ev: ev.t):
+            if e.kind in HITS and "notes" not in e.data:
+                notes = []
+                if e.kind != "bounce" or e.t - last >= float(self.o.min_gap):
+                    last = e.t
+                    notes = [[n.pitch, round(midi_gain(n.vel), 4)] for n in groups[k % len(groups)][1]]
+                    k += 1
+                e = replace(e, data={**e.data, "notes": notes})
+            out.append(e)
+        return replace(timeline, events=out)
+
+    def master(self, audio: np.ndarray, circular: bool = False) -> np.ndarray:
+        """Final loudness: ``loudness`` (LUFS, look-ahead limited) when the set
+        or the config asks for it, else the classic RMS master."""
+        target = self.o.loudness if self.o.loudness is not None else self.lufs
+        if target is None:
+            return synth.master(audio)
+        return loudness.normalize(audio, float(target), circular=circular)
+
     def on_bounce(self, mix: Mixer, e: Event, start: int, pan: float, index: int) -> None:
         vel = 0.5 + 0.5 * e.strength
         self.play(mix, self.next_note(index, e), start, vel, pan)
@@ -92,6 +140,10 @@ class SoundSet:
 
     def on_hit(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         mix.add(synth.click(1.0, bright=0.6, seed=start), start, gain=0.25 * e.strength, pan=pan, send=0.3)
+
+    def on_tap(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        """A touch that is not a note (a ghost bounce between two far-apart notes): a faint tick."""
+        mix.add(synth.click(1.0, bright=0.35, seed=start), start, gain=0.06 * e.strength, pan=pan, send=0.2)
 
     def on_sealed(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         root = self.final_chord()[0]
@@ -129,7 +181,13 @@ class SoundSet:
                                 seed=self.seed), start, gain=0.32)
 
     # -- render ---------------------------------------------------------------
+    def prepare(self, timeline: Timeline) -> None:
+        """Called once before rendering, with the timeline to be rendered."""
+
     def render(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
+        self.period = n_frames / fps if timeline.periodic else None
+        self.prepare(timeline)
+        timeline = self.assign(timeline)
         if timeline.periodic:
             return self._render_periodic(timeline, fps, n_frames)
         return self._render(timeline, fps, n_frames)
@@ -137,16 +195,17 @@ class SoundSet:
     def _render_periodic(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
         """The video is one cycle of a loop. Render two cycles back to back and
         keep the second: its start already carries the reverb and ring-out of
-        the end of the cycle, so the audio wraps around with no seam."""
+        the end of the cycle, so the audio wraps around with no seam. The kept
+        cycle is mastered as a loop (the limiter looks across the seam).
+        Both copies share each event's ``data``, so they play the same pitches."""
         length = n_frames / fps
-        self.period = length
         events = list(timeline.events) + [replace(e, t=e.t + length) for e in timeline.events]
-        twice = Timeline(events=events, ending="none", end_t=2 * length, length=2 * length,
-                         audio_timing=timeline.audio_timing)
-        audio = self._render(twice, fps, 2 * n_frames)
-        return audio[:, n_frames * SR // fps:]
+        twice = replace(timeline, events=events, ending="none", end_t=2 * length, length=2 * length,
+                        loop_t=0.0, periodic=False)
+        audio = self._render(twice, fps, 2 * n_frames, mastered=False)[:, n_frames * SR // fps:]
+        return self.master(audio, circular=True) * float(self.o.volume)
 
-    def _render(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
+    def _render(self, timeline: Timeline, fps: int, n_frames: int, mastered: bool = True) -> np.ndarray:
         n_samples = n_frames * SR // fps
         exact = timeline.audio_timing == "exact"
         mix = Mixer(n_samples)
@@ -158,7 +217,10 @@ class SoundSet:
             # notes start on the first sample of their frame, or at their exact time
             start = int(round(e.t * SR)) if exact else frame_of(e.t, fps) * SR // fps
             pan = float(e.data["pan"]) if "pan" in e.data else max(-1.0, min(1.0, (e.x - 540.0) / 540.0)) * 0.45
-            if e.kind == "bounce":
+            if e.kind in HITS and "notes" in e.data:
+                if e.data["notes"]:
+                    self.play_notes(mix, e, start, pan)
+            elif e.kind == "bounce":
                 if e.t - last_note < float(self.o.min_gap):
                     continue
                 last_note = e.t
@@ -173,7 +235,10 @@ class SoundSet:
                 handler = getattr(self, f"on_{e.kind}", None)
                 if handler is not None:
                     handler(mix, e, start, pan)
-        audio = mix.finish(self.reverb_mix, self.reverb_time, seed=self.seed)
+        audio = mix.finish(self.reverb_mix, self.reverb_time, seed=self.seed, mastered=False)
+        if not mastered:
+            return audio
+        audio = self.master(audio)
         # Fade out under the picture's crossfade into frame 0, so the loop is seamless:
         # the last sample is silent and the video restarts on near-silence.
         if 0 < timeline.loop_t < n_samples / SR:
@@ -313,6 +378,11 @@ class Tactile(SoundSet):
         mix.add(synth.pop(freq, seed=index), start, gain=vel * 0.9, pan=pan)
         mix.add(synth.click(1.0, bright=0.9, seed=index), start, gain=vel * 0.5, pan=pan)
 
+    def play_notes(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        for m, gain in e.data["notes"]:
+            mix.add(synth.pop(midi_to_hz(int(m) - 12), seed=start + int(m)), start, gain=float(gain) * 0.9, pan=pan)
+        mix.add(synth.click(1.0, bright=0.9, seed=start), start, gain=0.5 * e.strength, pan=pan)
+
     def on_note(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         vel = 0.4 + 0.45 * e.strength
         freq = midi_to_hz(self.degree_note(int(e.data.get("degree", 0))) - 12)
@@ -413,7 +483,138 @@ class Ambient(SoundSet):
         return [self.root + 12 + i for i in (0, 4, 7, 11)]
 
 
-SOUND_SETS: dict[str, type[SoundSet]] = {cls.name: cls for cls in (Pentatonic, Melody, Tactile, Ambient)}
+class HarmonySet(SoundSet):
+    name = "harmony"
+    description = "Chord tones over a key, progression and tempo, with a soft pad and bass; -14 LUFS."
+    options = {
+        "key": "C",  # C, D, Eb, ... or random (from the seed)
+        "progression": "I-V-vi-IV",  # roman numerals (I-V-vi-IV, vi-IV-I-V, ii-V-I, ...) or random
+        "tempo": "auto",  # BPM, or auto: 70-90 from the seed
+        "chord_bars": 1,  # bars per chord (polyrhythm_loop fits this to its cycle)
+        "instrument": "felt_piano",  # felt_piano | music_box | celesta | kalimba | marimba | glock | pluck | chime
+        "low": "C4",  # melody range
+        "high": "C6",
+        "dyads": 0.15,  # chance that a lone hit adds a second chord tone
+        "humanize": 0.15,  # velocity variation, +/- this fraction
+        "pad": 1.0,  # level of the pad (0 = off)
+        "bass": 1.0,  # level of the bass (0 = off)
+    }
+    reverb_mix = 0.26
+    reverb_time = 2.4
+    lufs = -14.0
+
+    def setup(self) -> None:
+        from .melodies import note_to_midi
+
+        self.lo, self.hi = note_to_midi(str(self.o.low)), note_to_midi(str(self.o.high))
+        if self.hi - self.lo < 7:
+            raise ValueError("harmony: the melody range (low..high) must span at least a fifth")
+        self.h: harmony_mod.Harmony | None = None
+
+    def prepare(self, timeline: Timeline) -> None:
+        """The harmony the format built the picture for, else the score's, else the plan."""
+        if timeline.music:
+            self.h = harmony_mod.Harmony.from_dict(timeline.music)
+        elif self.score is not None:
+            self.h = harmony_mod.from_score(self.score)
+        else:
+            self.h = harmony_mod.plan(vars(self.o), self.seed)
+
+    # -- pitches ----------------------------------------------------------------
+    def assign(self, timeline: Timeline) -> Timeline:
+        """Each hit picks a tone of the chord sounding at its time, within
+        ``low``..``high``: never the pitch just played (nor one already in the
+        same instant), mostly stepwise, towards the event's ``register`` hint
+        (0 = low, 1 = high) when it has one; sometimes a dyad; velocities vary
+        by ``humanize``. In a loop the choices are made twice round the cycle
+        and the second round kept, so the start follows on from the end."""
+        if self.score is not None:
+            return super().assign(timeline)
+        events = sorted(timeline.events, key=lambda ev: ev.t)
+        hits = [i for i, e in enumerate(events) if e.kind in HITS and "notes" not in e.data]
+        if not hits:
+            return replace(timeline, events=events)
+        size: dict[float, int] = {}
+        for i in hits:
+            k = round(events[i].t, 6)
+            size[k] = size.get(k, 0) + 1
+        rng = random.Random(f"harmony-notes:{self.seed}")
+        choices: dict[int, list] = {}
+        prev = None
+        for _ in range(2 if timeline.periodic else 1):
+            last, group_t, used = -1e9, None, set()
+            for i in hits:
+                e = events[i]
+                if e.kind == "bounce" and e.t - last < float(self.o.min_gap):
+                    choices[i] = []
+                    continue
+                last = e.t
+                if group_t is None or abs(e.t - group_t) > 1e-6:
+                    group_t, used = e.t, set()
+                n_group = size[round(e.t, 6)]
+                tones = self.h.tones(e.t, self.lo, self.hi)
+                m = self._pick(tones, prev, used, e.data.get("register"), rng)
+                vel = (0.42 + 0.4 * e.strength) * (1 + rng.uniform(-1, 1) * float(self.o.humanize))
+                vel *= n_group ** -0.4  # many dots at once: an accent, not a wall
+                notes = [[m, round(vel, 4)]]
+                used.add(m)
+                if n_group == 1 and rng.random() < float(self.o.dyads):
+                    below = [x for x in tones if 3 <= m - x <= 9]
+                    above = [x for x in tones if 3 <= x - m <= 9]
+                    pool = below or above
+                    if pool:
+                        notes.append([rng.choice(pool), round(vel * 0.55, 4)])
+                choices[i] = notes
+                prev = m
+        out = [replace(e, data={**e.data, "notes": choices[i]}) if i in choices else e
+               for i, e in enumerate(events)]
+        return replace(timeline, events=out)
+
+    def _pick(self, tones: list[int], prev: int | None, used: set, register, rng: random.Random) -> int:
+        cands = ([m for m in tones if m != prev and m not in used] or [m for m in tones if m != prev] or tones)
+        mid = (self.lo + self.hi) / 2
+        if register is not None:
+            ref, spread = self.lo + (self.hi - self.lo) * float(register), 3.0
+        else:
+            ref, spread = (prev if prev is not None else mid), 4.5
+        weights = [math.exp(-abs(m - ref) / spread) * math.exp(-((m - mid) / 14.0) ** 2) for m in cands]
+        return rng.choices(cands, weights)[0]
+
+    # -- bed ---------------------------------------------------------------------
+    def bed(self, mix: Mixer, timeline: Timeline, fps: int) -> None:
+        """A soft pad holding each chord (crossfading into the next) and a
+        simple bass: the root on beats 1 and 3 of every bar."""
+        h = self.h
+        end = mix.n / SR
+        start = 0.0 if self.period else max(0.0, h.offset)
+        pad, bass = float(self.o.pad), float(self.o.bass)
+        for s, e, chord, i in h.segments(start, end):
+            dur = e - s
+            if pad > 0:
+                voicing = sorted(50 + (pc - 50) % 12 for pc in chord.tones)  # D3..C#4
+                sig = synth.pad_chord([midi_to_hz(m) for m in voicing], dur + 0.9, attack=min(0.5, dur / 3),
+                                      release=0.9, seed=self.seed * 97 + i, brightness=0.45)
+                mix.add(sig, int(round(s * SR)), gain=0.3 * pad, send=0.6)
+            if bass > 0:
+                root = 36 + (chord.root - 36) % 12  # C2..B2
+                half = h.bar / 2
+                k = 0
+                while s + k * half < e - 1e-6:
+                    t0 = s + k * half
+                    sig = synth.bass(midi_to_hz(root), min(half, e - t0) * 0.92)
+                    mix.add(sig, int(round(t0 * SR)), gain=(0.5 if k % 2 == 0 else 0.3) * bass, send=0.1)
+                    k += 1
+
+    def final_chord(self) -> list[int]:
+        return self.h.final_chord() if self.h is not None else [60, 64, 67, 72]
+
+    def next_note(self, index: int, event: Event) -> int:  # every hit gets its notes in assign()
+        tones = self.h.tones(event.t, self.lo, self.hi)
+        return tones[index % len(tones)]
+
+
+SOUND_SETS: dict[str, type[SoundSet]] = {cls.name: cls for cls in (Pentatonic, Melody, Tactile, Ambient,
+                                                                   HarmonySet)}
 
 
 def get(name: str) -> type[SoundSet]:

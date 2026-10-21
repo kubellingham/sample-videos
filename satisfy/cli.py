@@ -61,14 +61,19 @@ def _cmd_formats(a) -> None:
 
 
 def _cmd_sounds(a) -> None:
+    from .audio.harmony import PROGRESSIONS
     from .audio.melodies import MELODIES
     from .audio.sound_sets import SOUND_SETS
+    from .audio.synth import INSTRUMENTS
 
     for name, cls in SOUND_SETS.items():
-        opts = {"min_gap": 0.055, "volume": 1.0, **cls.options}
         print(f"{name}: {cls.description}")
-        for k, v in opts.items():
+        for k, v in cls.options.items():
             print(f"    {k}: {v!r}")
+    print("every set also takes: min_gap (0.055), volume (1.0), loudness (target LUFS; harmony: -14),"
+          " midi (path to a .mid file)")
+    print("instruments: " + ", ".join(INSTRUMENTS))
+    print("progressions (harmony, random picks one): " + ", ".join(PROGRESSIONS))
     print("melodies: " + ", ".join(sorted(MELODIES)))
 
 

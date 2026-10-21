@@ -205,6 +205,8 @@ class Renderer:
         return pre[len(pre) + i] if -i <= len(pre) else None
 
     def _trail(self, n: int, circle: Circle) -> list[tuple[float, float]]:
+        if circle.path is not None:
+            return [*circle.path, (circle.x, circle.y)]
         fps = self.sim.fps
         k = max(1, math.ceil(circle.trail * fps))
         pts = []
@@ -223,7 +225,7 @@ class Renderer:
     def _draw_circle(self, c: skia.Canvas, n: int, o: Circle) -> None:
         if o.r <= 0.2:
             return
-        if o.trail > 0 and o.id is not None:
+        if (o.trail > 0 and o.id is not None) or o.path:
             pts = self._trail(n, o)
             m = len(pts) - 1
             for i in range(m):

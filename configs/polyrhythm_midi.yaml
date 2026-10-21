@@ -1,0 +1,13 @@
+# polyrhythm_loop choreographed to a MIDI file: one ring per pitch (lowest
+# outermost), and each dot crosses the top exactly on its pitch's notes.
+# The cycle is the score (looped or cut at bar lines to fit the duration).
+format: polyrhythm_loop
+seed: 1
+palette: aurora
+sound_set: harmony
+duration: 45
+hook_text: "Each dot plays one note of the tune"
+
+sound:
+  midi: assets/midi/ode_to_joy.mid   # pitches and timing; pad and bass follow its chords
+  instrument: felt_piano
