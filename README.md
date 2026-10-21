@@ -11,7 +11,8 @@ YAML config ──► simulation (pymunk, fixed 240 Hz clock)
 
 Samples (`configs/shrinking_ring.yaml`): [`samples/shrinking_ring_seed7.mp4`](samples/shrinking_ring_seed7.mp4)
 and [`samples/shrinking_ring_seed10.mp4`](samples/shrinking_ring_seed10.mp4) (trapped endings) and
-[`samples/shrinking_ring_seed1.mp4`](samples/shrinking_ring_seed1.mp4) (escape), each with a contact sheet.
+[`samples/shrinking_ring_seed1.mp4`](samples/shrinking_ring_seed1.mp4) (escape), each with a contact sheet; `*_ending.png` shows the last 3 s of a
+trapped ending at 10 fps with the ball's speed and free room.
 
 ## Setup
 
@@ -142,15 +143,20 @@ grows the ball (`mode: grow`) or adds a ball (`mode: spawn`).
   ball inside the frame and out of the Shorts UI from the slow motion until
   the pop is over.
 * **Trapped freeze**: once the ball can no longer fit through the gap
-  (sealed), its growth accelerates so it fills the ring `seal_fill` seconds
-  (2.5) later; the frame freezes and desaturates: "TRAPPED!"
+  (sealed) it stops being re-energised and settles like a dropped ball: each
+  bounce loses energy (`settle_restitution` 0.70 down to 0.60), so bounces get
+  lower and closer together and the notes speed up; its speed is capped so it
+  never moves more than a quarter of the free room per frame. It comes to rest
+  on the bottom and keeps growing until it touches the ring all round, exactly
+  `seal_fill` seconds (2.5) after sealing; then the frame freezes and
+  desaturates: "TRAPPED!"
 
 Balls keep a constant energy, so `energy` (reach height above the center)
 decides how high they can climb. The gap starts near the top, out of reach.
 The ring's spin and shrink bring it into reach while the ball grows, so it
 is a race. Main params: `mode`, `ring_radius`, `ring_shrink`,
 `ring_squeeze`, `gap`, `spin`, `gravity`, `energy`, `ball_radius`,
-`first_bounce`, `grow` (`auto` scales with duration), `seal_fill`, `slowmo`,
+`first_bounce`, `grow` (`auto` scales with duration), `seal_fill`, `settle_restitution`, `slowmo`,
 `max_balls`, `spawn_from`, `trail`, `counter`, `escape_text`,
 `trapped_text`, `outro`, `loop_xfade`, `tries`, `pace_window`.
 

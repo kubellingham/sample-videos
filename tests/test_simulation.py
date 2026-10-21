@@ -151,6 +151,43 @@ def test_freeze_lands_soon_after_sealing():
         assert 2.0 <= freeze.t - sealed.t <= 3.0
 
 
+def test_sealed_ball_settles_then_fills_the_ring():
+    """After sealing: no rattling (speed capped by the free room), bounces get
+    lower and closer together, and the freeze lands when the ball touches the
+    ring all round, about 2.5 s after sealing."""
+    from satisfy.scene import Arc
+    from satisfy.timeline import frame_of
+
+    for seed in _seeds_ending("trapped", limit=4):
+        res = _sim(VideoConfig(format="shrinking_ring", seed=seed), 60)
+        tl = res.timeline
+        (sealed,), (freeze,) = tl.of_kind("sealed"), tl.of_kind("freeze")
+        assert freeze.t - sealed.t == pytest.approx(2.5, abs=0.05)
+
+        def state(f):
+            sc = res.frames[f]
+            ball = [o for o in sc.items if isinstance(o, Circle) and o.id == 0][0]
+            ring = [o for o in sc.items if isinstance(o, Arc)][0]
+            return ball, ring, ring.r - ring.width / 2 - ball.r  # free room
+
+        f0, f1 = frame_of(sealed.t, 60), frame_of(freeze.t, 60)
+        for f in range(f0 + 1, f1 + 1):
+            (a, _, room_a), (b, _, room_b) = state(f - 1), state(f)
+            move = math.hypot(b.x - a.x, b.y - a.y)
+            # at most a quarter of the room per frame (plus the rise from growing while resting)
+            assert move <= 0.25 * room_a + abs(room_a - room_b) + 0.5, (seed, f, move, room_a)
+        ball, ring, room = state(f1)
+        assert room <= 1.0 and math.hypot(ball.x - ring.cx, ball.y - ring.cy) <= 1.0  # touching all round
+
+        bounces = [e for e in tl.of_kind("bounce") if e.t >= sealed.t]
+        biggest = max(range(len(bounces)), key=lambda i: bounces[i].strength)
+        tail = bounces[biggest:]
+        assert len(tail) >= 3
+        assert all(b.strength < a.strength for a, b in zip(tail, tail[1:]))  # lower each time
+        gaps = [b.t - a.t for a, b in zip(tail, tail[1:])]
+        assert all(g2 < g1 + 0.01 for g1, g2 in zip(gaps, gaps[1:]))  # closer together
+
+
 def test_a_sealed_ball_never_escapes():
     for seed in _seeds_ending("escape", limit=6, search=30):
         tl = _sim(VideoConfig(format="shrinking_ring", seed=seed), 15).timeline

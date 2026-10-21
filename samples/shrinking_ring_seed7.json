@@ -23,27 +23,27 @@
   "width": 1080,
   "height": 1920,
   "fps": 60,
-  "frames": 1517,
-  "length": 25.283,
+  "frames": 1518,
+  "length": 25.3,
   "ending": "trapped",
-  "end_t": 23.279,
+  "end_t": 23.296,
   "variant": 0,
   "palette": "neon",
   "counts": {
-   "bounce": 77,
+   "bounce": 64,
    "sealed": 1,
    "freeze": 1
   },
-  "render_seconds": 82.5
+  "render_seconds": 86.0
  },
  "timeline": {
   "ending": "trapped",
-  "end_t": 23.2792,
-  "length": 25.2833,
+  "end_t": 23.2958,
+  "length": 25.3,
   "variant": 0,
-  "loop_t": 24.7833,
+  "loop_t": 24.8,
   "counts": {
-   "bounce": 77,
+   "bounce": 64,
    "sealed": 1,
    "freeze": 1
   },
@@ -813,255 +813,86 @@
    {
     "t": 20.845833,
     "kind": "bounce",
-    "x": 334.16,
-    "y": 680.91,
-    "strength": 0.2403,
+    "x": 336.98,
+    "y": 679.61,
+    "strength": 0.2197,
     "data": {
      "ball": 0,
      "n": 59,
-     "r": 166.74,
+     "r": 167.1,
      "hero": true
     }
    },
    {
-    "t": 21.091667,
+    "t": 21.108333,
     "kind": "bounce",
-    "x": 501.56,
-    "y": 1265.15,
-    "strength": 0.7474,
+    "x": 407.42,
+    "y": 1244.44,
+    "strength": 0.6764,
     "data": {
      "ball": 0,
      "n": 60,
-     "r": 168.59,
+     "r": 173.62,
      "hero": true
     }
    },
    {
-    "t": 21.308333,
+    "t": 21.516667,
     "kind": "bounce",
-    "x": 788.6,
-    "y": 728.15,
-    "strength": 0.3455,
+    "x": 529.19,
+    "y": 1266.37,
+    "strength": 0.4801,
     "data": {
      "ball": 0,
      "n": 61,
-     "r": 172.35,
+     "r": 190.45,
      "hero": true
     }
    },
    {
-    "t": 21.520833,
+    "t": 21.766667,
     "kind": "bounce",
-    "x": 509.65,
-    "y": 1260.3,
-    "strength": 0.763,
+    "x": 509.84,
+    "y": 1257.9,
+    "strength": 0.2774,
     "data": {
      "ball": 0,
      "n": 62,
-     "r": 177.85,
+     "r": 203.11,
      "hero": true
     }
    },
    {
-    "t": 21.7375,
+    "t": 21.9,
     "kind": "bounce",
-    "x": 433.36,
-    "y": 639.31,
-    "strength": 0.2575,
+    "x": 528.03,
+    "y": 1257.46,
+    "strength": 0.1335,
     "data": {
      "ball": 0,
      "n": 63,
-     "r": 185.19,
+     "r": 210.36,
      "hero": true
     }
    },
    {
-    "t": 21.95,
+    "t": 21.954167,
     "kind": "bounce",
-    "x": 503.7,
-    "y": 1259.1,
-    "strength": 0.7353,
+    "x": 529.22,
+    "y": 1255.54,
+    "strength": 0.0351,
     "data": {
      "ball": 0,
      "n": 64,
-     "r": 193.95,
+     "r": 213.39,
      "hero": true
     }
    },
    {
-    "t": 22.133333,
-    "kind": "bounce",
-    "x": 479.03,
-    "y": 630.05,
-    "strength": 0.3138,
-    "data": {
-     "ball": 0,
-     "n": 65,
-     "r": 202.64,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.308333,
-    "kind": "bounce",
-    "x": 530.01,
-    "y": 1255.14,
-    "strength": 0.7348,
-    "data": {
-     "ball": 0,
-     "n": 66,
-     "r": 211.83,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.45,
-    "kind": "bounce",
-    "x": 469.59,
-    "y": 639.31,
-    "strength": 0.3949,
-    "data": {
-     "ball": 0,
-     "n": 67,
-     "r": 219.84,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.583333,
-    "kind": "bounce",
-    "x": 530.0,
-    "y": 1251.74,
-    "strength": 0.7092,
-    "data": {
-     "ball": 0,
-     "n": 68,
-     "r": 227.8,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.695833,
-    "kind": "bounce",
-    "x": 473.11,
-    "y": 641.57,
-    "strength": 0.4407,
-    "data": {
-     "ball": 0,
-     "n": 69,
-     "r": 234.81,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.8,
-    "kind": "bounce",
-    "x": 585.38,
-    "y": 1243.17,
-    "strength": 0.6428,
-    "data": {
-     "ball": 0,
-     "n": 70,
-     "r": 241.51,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.8875,
-    "kind": "bounce",
-    "x": 471.36,
-    "y": 645.24,
-    "strength": 0.4707,
-    "data": {
-     "ball": 0,
-     "n": 71,
-     "r": 247.28,
-     "hero": true
-    }
-   },
-   {
-    "t": 22.966667,
-    "kind": "bounce",
-    "x": 605.84,
-    "y": 1234.35,
-    "strength": 0.6362,
-    "data": {
-     "ball": 0,
-     "n": 72,
-     "r": 252.6,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.033333,
-    "kind": "bounce",
-    "x": 461.84,
-    "y": 650.44,
-    "strength": 0.5031,
-    "data": {
-     "ball": 0,
-     "n": 73,
-     "r": 257.15,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.095833,
-    "kind": "bounce",
-    "x": 629.33,
-    "y": 1228.6,
-    "strength": 0.6072,
-    "data": {
-     "ball": 0,
-     "n": 74,
-     "r": 261.46,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.15,
-    "kind": "bounce",
-    "x": 464.43,
-    "y": 650.28,
-    "strength": 0.5069,
-    "data": {
-     "ball": 0,
-     "n": 75,
-     "r": 265.24,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.2,
-    "kind": "bounce",
-    "x": 633.54,
-    "y": 1226.81,
-    "strength": 0.628,
-    "data": {
-     "ball": 0,
-     "n": 76,
-     "r": 268.75,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.279167,
-    "kind": "bounce",
-    "x": 638.74,
-    "y": 1223.27,
-    "strength": 0.6149,
-    "data": {
-     "ball": 0,
-     "n": 77,
-     "r": 274.35,
-     "hero": true
-    }
-   },
-   {
-    "t": 23.279167,
+    "t": 23.295833,
     "kind": "freeze",
-    "x": 548.44,
-    "y": 964.21,
+    "x": 540.0,
+    "y": 940.32,
     "strength": 1.0,
     "data": {
      "reason": "trapped"

@@ -15,8 +15,10 @@ approaches the gap's width, and the shrink speeds up over the final third.
 
 The video opens mid-flight (``preroll``) with the first bounce inside
 ``first_bounce`` seconds. Once the ball can no longer fit through the gap
-(sealed), its growth accelerates so the freeze lands ``seal_fill`` seconds
-later. An escape plays ``slowmo`` seconds of quarter-speed slow motion as the
+(sealed) it stops being re-energised: each bounce loses energy, so it settles
+like a dropped ball (bounces lower and closer together), its speed is capped
+by the free room, and it comes to rest at the bottom while it grows, touching
+the ring all round - and freezing - ``seal_fill`` seconds after sealing. An escape plays ``slowmo`` seconds of quarter-speed slow motion as the
 ball passes the gap, timed from the rehearsal, then bursts; a camera pan and
 zoom, also planned from the rehearsal, keep the escaping ball inside the frame
 and out of the Shorts UI.
@@ -43,6 +45,15 @@ TRACE_STEPS = 40  # rehearsal keeps this many recent positions per ball (covers 
 CAM_LEAD = 0.35  # seconds the escape camera takes to pan into place before the slow motion
 FRAME_MARGIN = 16.0  # px the escaping ball keeps from the frame / Shorts UI edges
 HOOK_CLEAR = 440.0  # px from the top: keep the escaping ball below the hook text
+# After "sealed" the ball settles like a dropped ball, then grows into the ring.
+SETTLE_DROP = 0.015  # restitution lost per bounce while settling (down to the floor in settle_restitution)
+SETTLE_TANGENT = 0.8  # share of sideways speed kept per bounce while settling
+ROOM_FRAMES = 4  # while settling, never move more than 1/ROOM_FRAMES of the free room per 60 fps frame
+REST_SPEED = 90.0  # px/s: a rebound slower than this means the ball has settled
+REST_ROOM = 14.0  # px: with less free room than this the ball rests regardless
+REST_FOLLOW = 0.06  # s: time constant of the glide onto the resting point
+ROLL_DAMP = 0.35  # s: speed decay time constant while the settling ball rolls along the wall
+SIDE_DRAG = 0.2  # s: decay time of sideways speed while settling, so it comes to bounce near the bottom
 POP = 0.3  # seconds: after the burst the escaped ball brakes and pops (fades out, swelling)
 POP_BRAKE = 0.08  # velocity decay time constant (s) while it pops; travel = speed * this
 POP_SWELL = 0.25  # how much the ball swells as it pops
@@ -121,7 +132,8 @@ class ShrinkingRing(Simulation):
         "grow": "auto",  # px added to the radius per bounce (grow mode); auto scales with duration
         "grow_speed": 140.0,  # max visual growth rate (px/s)
         "fill": 0.93,  # grow mode: trapped once ball radius >= fill * ring radius
-        "seal_fill": 2.5,  # grow mode: once sealed, the ball fills the ring this many seconds later
+        "seal_fill": 2.5,  # grow mode: once sealed, the ball touches the ring all round this many seconds later
+        "settle_restitution": [0.70, 0.60],  # once sealed: first bounce, floor (each bounce loses a little more)
         "slowmo": 0.4,  # escape: seconds of quarter-speed slow motion before the burst (0 = off)
         "spawn_radius": 16.0,  # spawn mode: radius of new balls
         "spawn_from": "hero",  # hero: only the first ball's bounces spawn | any
@@ -193,6 +205,8 @@ class ShrinkingRing(Simulation):
         self.last_spawn_t = -10.0
         self.sealed_t: float | None = None
         self.sealed_r = 0.0
+        self.settle_n = 0  # bounces since sealing
+        self.resting = False  # sealed ball has settled at the bottom
         self.escape_vel = (0.0, 0.0)
         self.escape_ball: _Ball | None = None
         self.color_i = 0
@@ -378,25 +392,23 @@ class ShrinkingRing(Simulation):
 
         # grow mode: ease the radius towards its target
         if p.mode == "grow" and not self.ended:
-            speed = float(p.grow_speed)
-            if self.sealed_t is not None and float(p.seal_fill) > 0:
-                # sealed: accelerate (ease-in) to a full ring seal_fill seconds later
-                hero = self.balls[0]
-                k = min(1.0, (t - self.sealed_t) / float(p.seal_fill))
-                full = float(p.fill) * self.R + 2.0
-                hero.target_r = max(hero.target_r, self.sealed_r + (full - self.sealed_r) * k * k)
-                speed = 600.0
-            for ball in self.balls:
-                if ball.r < ball.target_r:
-                    ball.r = min(ball.target_r, ball.r + speed * dt)
-                    ball.shape.unsafe_set_radius(ball.r)
+            if self._settling:
+                self._settle_grow(t)
+            else:
+                for ball in self.balls:
+                    if ball.r < ball.target_r:
+                        ball.r = min(ball.target_r, ball.r + float(p.grow_speed) * dt)
+                        ball.shape.unsafe_set_radius(ball.r)
 
         self.space.step(dt)
 
         if not self.ended:
-            self._unstick(t)
+            if not self._settling:
+                self._unstick(t)
             self._resolve_bounces(t)
             self._hold_energy()
+            if self._settling:
+                self._settle_motion(t, dt)
             self._check_escape(t)
             if not self.ended:
                 self._check_trapped(t)
@@ -421,12 +433,15 @@ class ShrinkingRing(Simulation):
                 continue
             approach, ball.pending = ball.pending, 0.0
             body = ball.body
-            # Keep energy constant: a bounce re-energises the ball.
-            speed = self._speed_at(body.position.y)
-            v = body.velocity
-            mag = math.hypot(v.x, v.y)
-            if speed > 1.0 and mag > 1.0:
-                body.velocity = (v.x * speed / mag, v.y * speed / mag)
+            if self._settling and ball.hero:
+                self._settle_bounce(ball)
+            else:
+                # Keep energy constant: a bounce re-energises the ball.
+                speed = self._speed_at(body.position.y)
+                v = body.velocity
+                mag = math.hypot(v.x, v.y)
+                if speed > 1.0 and mag > 1.0:
+                    body.velocity = (v.x * speed / mag, v.y * speed / mag)
 
             dx, dy = body.position.x - self.cx, body.position.y - self.cy
             d = math.hypot(dx, dy) or 1.0
@@ -458,12 +473,104 @@ class ShrinkingRing(Simulation):
                 ):
                     spawned_this_step = self._spawn(t)
 
+    # ------------------------------------------------------------ settling
+    @property
+    def _settling(self) -> bool:
+        """Sealed (grow mode): the ball settles and grows into the ring."""
+        return self.sealed_t is not None and float(self.p.seal_fill) > 0 and self.p.mode == "grow"
+
+    def _settle_grow(self, t: float) -> None:
+        """Radius schedule from sealing to contact: room = R - r reaches 0
+        exactly ``seal_fill`` seconds after sealing, growing a little faster
+        towards the end."""
+        hero = self.balls[0]
+        k = min(1.0, (t - self.sealed_t) / float(self.p.seal_fill))
+        r = self.sealed_r + (self.R - self.sealed_r) * k ** 1.5
+        hero.r = hero.target_r = max(hero.r, min(r, self.R))
+        if not self.resting:
+            hero.shape.unsafe_set_radius(hero.r)
+
+    def _settle_bounce(self, ball: _Ball) -> None:
+        """Lose energy on a bounce like a dropped ball: restitution on the speed
+        into the wall, plus damping of the sideways speed so the ball works its
+        way to the bottom. Bounces get lower and closer together."""
+        first, floor = (float(v) for v in self.p.settle_restitution)
+        e = max(floor, first - SETTLE_DROP * self.settle_n)
+        self.settle_n += 1
+        body = ball.body
+        nx, ny = body.position.x - self.cx, body.position.y - self.cy
+        d = math.hypot(nx, ny) or 1.0
+        nx, ny = nx / d, ny / d
+        v = body.velocity
+        vn = v.x * nx + v.y * ny  # normal part (inwards after the bounce)
+        tx, ty = v.x - vn * nx, v.y - vn * ny
+        body.velocity = (e * vn * nx + SETTLE_TANGENT * tx, e * vn * ny + SETTLE_TANGENT * ty)
+
+    def _start_rest(self) -> None:
+        if self.resting:
+            return
+        self.resting = True
+        hero = self.balls[0]
+        hero.body.velocity = (0.0, 0.0)
+        self.space.remove(hero.body, hero.shape)  # from here on its motion is the resting glide
+
+    def _settle_motion(self, t: float, dt: float) -> None:
+        """Cap speed by the free room and damp rolling contact; once the ball
+        can't lift off any more, rest it on the bottom of the ring (its center
+        rises as it grows) without ever overlapping the ring."""
+        hero = self.balls[0]
+        body = hero.body
+        room = max(0.0, self.R - hero.r)
+        x, y = body.position
+        if not self.resting:
+            v = body.velocity
+            v = (v.x * math.exp(-dt / SIDE_DRAG), v.y)  # sideways swing dies out: it drops to the bottom
+            if hero.touch_seen == t:  # rolling/sliding along the wall loses energy too
+                k = math.exp(-dt / ROLL_DAMP)
+                v = (v[0] * k, v[1] * k)
+            mag = math.hypot(v[0], v[1])
+            cap = room * 60.0 / ROOM_FRAMES
+            if mag > cap:
+                v = (v[0] * cap / mag, v[1] * cap / mag)
+                mag = cap
+            # Growth outpaces pymunk's soft overlap correction, so keep the ball
+            # touching the ring at most (and drop any speed into it).
+            dx, dy = x - self.cx, y - self.cy
+            d = math.hypot(dx, dy)
+            if d > room and d > 0:
+                nx, ny = dx / d, dy / d
+                x, y = self.cx + nx * room, self.cy + ny * room
+                body.position = (x, y)
+                vn = v[0] * nx + v[1] * ny
+                if vn > 0:
+                    v = (v[0] - vn * nx, v[1] - vn * ny)
+                    mag = math.hypot(v[0], v[1])
+            body.velocity = v
+            lift = 0.5 * mag * mag + self.g * (self.cy + room - y)  # energy above the resting point
+            if room >= REST_ROOM and lift > 0.5 * REST_SPEED * REST_SPEED:
+                return
+            self._start_rest()
+        a = 1.0 - math.exp(-dt / REST_FOLLOW)
+        nx, ny = x + (self.cx - x) * a, y + (self.cy + room - y) * a  # glide to the bottom of the ring
+        step_cap = max(room, 1.0) / ROOM_FRAMES * 60.0 * dt
+        dx, dy = nx - x, ny - y
+        dd = math.hypot(dx, dy)
+        if dd > step_cap:
+            nx, ny = x + dx * step_cap / dd, y + dy * step_cap / dd
+        dx, dy = nx - self.cx, ny - self.cy
+        d = math.hypot(dx, dy)
+        if d > room:  # touching the wall at most, never through it
+            nx, ny = (self.cx + dx * room / d, self.cy + dy * room / d) if d > 0 else (self.cx, self.cy)
+        body.position = (nx, ny)
+
     def _hold_energy(self) -> None:
         """Keep every ball at the target energy. Ball-ball collisions (and growth
         pushing a ball off the wall) would otherwise move energy around: one ball
         could climb past the reach height, another could end up sliding along
         the floor without ever bouncing again. Collisions still change direction."""
         for ball in self.balls:
+            if ball.hero and self._settling:
+                continue  # sealed: it loses energy now
             body = ball.body
             v = body.velocity
             mag = math.hypot(v.x, v.y)
@@ -565,9 +672,12 @@ class ShrinkingRing(Simulation):
             inside = math.hypot(pos.x - self.cx, pos.y - self.cy) + hero.r <= self.R + 2.0  # not mid-gap
             if self.sealed_t is None and inside and 2 * hero.r > self._opening():  # it can't fit any more
                 self.sealed_t = t
-                self.sealed_r = hero.target_r
+                self.sealed_r = hero.r
                 self.emit("sealed", hero.body.position.x, hero.body.position.y, strength=0.6)
-            if hero.r >= float(p.fill) * self.R:
+            if self._settling:
+                if self.R - hero.r <= 0.5:  # touching the ring all round
+                    self._freeze(t, "trapped")
+            elif hero.r >= float(p.fill) * self.R:
                 self._freeze(t, "trapped")
         else:
             area = sum(b.r * b.r for b in self.balls if not b.escaped)
