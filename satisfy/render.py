@@ -13,7 +13,6 @@ out inside the safe area and any label that would cross into it is moved.
 from __future__ import annotations
 
 import math
-from dataclasses import replace
 from functools import lru_cache
 
 import numpy as np
@@ -98,10 +97,9 @@ class Renderer:
         self.hook = self._make_hook(hook_text) if hook_text.strip() else None
         self._blur_cache: dict[float, skia.MaskFilter] = {}
         self.loop_start = sim.loop_start if sim.loop_start is not None else sim.n_frames
-        self.first_scene: np.ndarray | None = None  # frame 0 without overlay or hook, for the loop crossfade
+        self.first_frame: np.ndarray | None = None
         if self.loop_start < sim.n_frames:
-            self._draw_scene(0)
-            self.first_scene = self.buffer.copy()
+            self.first_frame = self.render(0).copy()
 
     # ------------------------------------------------------------ static art
     def _surface(self, width: int, height: int) -> skia.Surface:
@@ -358,8 +356,8 @@ class Renderer:
         return skia.ColorFilters.Matrix([v for row in rows for v in row])
 
     # ------------------------------------------------------------------ frame
-    def _draw_scene(self, n: int) -> None:
-        """Background, scene items and full-frame effects (no overlay, no hook)."""
+    def render(self, n: int) -> np.ndarray:
+        """Draw frame ``n`` and return the RGBA buffer (reused between calls)."""
         scene: Scene = self.sim.frames[n]
         fx = scene.fx
         c = self.surface.getCanvas()
@@ -371,8 +369,8 @@ class Renderer:
             np.copyto(self.buffer, self.background_px)
         c.save()
         c.scale(self.scale, self.scale)
-        if fx.shake_x or fx.shake_y or fx.pan_x or fx.pan_y:
-            c.translate(fx.shake_x + fx.pan_x, fx.shake_y + fx.pan_y)
+        if fx.shake_x or fx.shake_y:
+            c.translate(fx.shake_x, fx.shake_y)
         if abs(fx.zoom - 1.0) > 1e-4:
             c.translate(fx.zoom_x, fx.zoom_y)
             c.scale(fx.zoom, fx.zoom)
@@ -381,6 +379,7 @@ class Renderer:
         c.restore()
         if cf is not None:
             c.restore()
+
         c.save()
         c.scale(self.scale, self.scale)
         if fx.vignette > 0:
@@ -389,38 +388,14 @@ class Renderer:
                 [_c((0, 0, 0), 0.0), _c((0, 0, 0), fx.vignette)], [0.35, 1.0])))
         if fx.flash > 0.002:
             c.drawRect(skia.Rect(0, 0, WIDTH, HEIGHT), skia.Paint(Color=_c(fx.flash_color, 0.3 * fx.flash)))
-        c.restore()
-
-    def crossfade(self, n: int) -> float:
-        """Loop crossfade progress for frame ``n``: 0 before it starts, approaching 1
-        on the last frame (the frame after the last one is frame 0 itself)."""
-        if n < self.loop_start or self.first_scene is None:
-            return 0.0
-        return (n - self.loop_start + 1) / (self.sim.n_frames - self.loop_start + 1)
-
-    def overlay_for(self, n: int) -> list:
-        """Overlay items (counter, labels) for frame ``n``, with alpha applied.
-        During the loop crossfade the ending's overlay fades out over the first
-        half and frame 0's fades in over the second, so digits never overlap."""
-        k = self.crossfade(n)
-        if k <= 0.0:
-            return list(self.sim.frames[n].overlay)
-        source, alpha = (self.sim.frames[n].overlay, 1 - 2 * k) if k < 0.5 else (self.sim.frames[0].overlay, 2 * k - 1)
-        return [replace(o, alpha=o.alpha * alpha) for o in source] if alpha > 0 else []
-
-    def render(self, n: int) -> np.ndarray:
-        """Draw frame ``n`` and return the RGBA buffer (reused between calls)."""
-        self._draw_scene(n)
-        k = self.crossfade(n)
-        if k > 0.0:
-            a = int(round(256 * k))
-            mixed = (self.buffer.astype(np.uint16) * (256 - a) + self.first_scene.astype(np.uint16) * a) >> 8
-            self.buffer[...] = mixed.astype(np.uint8)
-        c = self.surface.getCanvas()
-        c.save()
-        c.scale(self.scale, self.scale)
-        self._draw_items(c, n, self.overlay_for(n))
+        self._draw_items(c, n, scene.overlay)
         c.restore()
         if self.hook is not None:
             c.drawImage(self.hook[0], 0, self.hook[1])
+        if n >= self.loop_start and self.first_frame is not None:
+            # crossfade into frame 0; the frame after the last one is frame 0 itself
+            span = self.sim.n_frames - self.loop_start
+            a = int(round(256 * (n - self.loop_start + 1) / (span + 1)))
+            mixed = (self.buffer.astype(np.uint16) * (256 - a) + self.first_frame.astype(np.uint16) * a) >> 8
+            self.buffer[...] = mixed.astype(np.uint8)
         return self.buffer

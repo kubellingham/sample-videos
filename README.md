@@ -10,9 +10,8 @@ YAML config ──► simulation (pymunk, fixed 240 Hz clock)
 ```
 
 Samples (`configs/shrinking_ring.yaml`): [`samples/shrinking_ring_seed7.mp4`](samples/shrinking_ring_seed7.mp4)
-and [`samples/shrinking_ring_seed10.mp4`](samples/shrinking_ring_seed10.mp4) (trapped endings) and
-[`samples/shrinking_ring_seed1.mp4`](samples/shrinking_ring_seed1.mp4) (escape), each with a contact sheet; `*_ending.png` shows the last 3 s of a
-trapped ending at 10 fps with the ball's speed and free room.
+(trapped ending) and [`samples/shrinking_ring_seed10.mp4`](samples/shrinking_ring_seed10.mp4)
+(escape ending), each with a contact sheet.
 
 ## Setup
 
@@ -87,9 +86,7 @@ params:                  # optional format params
   are stamped in video time, so sound still lands on the right frame.
 * **Seamless loop.** The ending holds for `outro` seconds, then the last
   `loop_xfade` seconds crossfade into frame 0 (picture) and fade to silence
-  (audio), so Shorts' auto-replay has no visible or audible seam. Overlay
-  text (counter, labels) does not cross-dissolve: the ending's fades out over
-  the first half and frame 0's fades in over the second, so digits never overlap.
+  (audio), so Shorts' auto-replay has no visible or audible seam.
 * **Shorts safe zone.** All text stays out of the bottom 20% and the right
   12% of the frame, where the Shorts UI sits. The hook is laid out inside
   the safe area, and the renderer moves any label that would cross into it.
@@ -127,7 +124,7 @@ the sound sets understand: `bounce`, `spawn`, `hit`, `sealed`, `escape`,
 ### shrinking_ring
 
 A ball bounces inside a slowly rotating, shrinking ring with a gap (the
-ring spans ~78% of the frame width). Every bounce plays the next note and
+ring spans ~85% of the frame width). Every bounce plays the next note and
 grows the ball (`mode: grow`) or adds a ball (`mode: spawn`).
 
 * **Hook**: the video opens with the ball already in flight (a 0.25 s pre-roll
@@ -137,26 +134,17 @@ grows the ball (`mode: grow`) or adds a ball (`mode: spawn`).
   final third (`ring_squeeze`). The ring tints red as the ball's diameter
   approaches the gap's width, and is fully red once the ball can't fit.
 * **Escape burst**: a ball slips through the gap; `slowmo` seconds (0.4) of
-  quarter-speed slow motion with a rising sweep, then the ring shatters and
-  the ball brakes and pops into confetti: "ESCAPED!". The rehearsal records
-  where the ball travels, and a camera pan/zoom planned from it keeps the
-  ball inside the frame and out of the Shorts UI from the slow motion until
-  the pop is over.
-* **Trapped freeze**: once the ball can no longer fit through the gap
-  (sealed) it stops being re-energised and settles like a dropped ball: each
-  bounce loses energy (`settle_restitution` 0.70 down to 0.60), so bounces get
-  lower and closer together and the notes speed up; its speed is capped so it
-  never moves more than a quarter of the free room per frame. It comes to rest
-  on the bottom and keeps growing until it touches the ring all round, exactly
-  `seal_fill` seconds (2.5) after sealing; then the frame freezes and
-  desaturates: "TRAPPED!"
+  quarter-speed slow motion with a rising sweep, zooming in on the gap, then
+  the ring shatters: "ESCAPED!"
+* **Trapped freeze**: the ball fills the ring (or time runs out); the frame
+  freezes and desaturates: "TRAPPED!"
 
 Balls keep a constant energy, so `energy` (reach height above the center)
 decides how high they can climb. The gap starts near the top, out of reach.
 The ring's spin and shrink bring it into reach while the ball grows, so it
 is a race. Main params: `mode`, `ring_radius`, `ring_shrink`,
 `ring_squeeze`, `gap`, `spin`, `gravity`, `energy`, `ball_radius`,
-`first_bounce`, `grow` (`auto` scales with duration), `seal_fill`, `settle_restitution`, `slowmo`,
+`first_bounce`, `grow` (`auto` scales with duration), `slowmo`,
 `max_balls`, `spawn_from`, `trail`, `counter`, `escape_text`,
 `trapped_text`, `outro`, `loop_xfade`, `tries`, `pace_window`.
 
