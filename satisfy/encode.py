@@ -19,13 +19,19 @@ def ffmpeg_path() -> str:
 class VideoWriter:
     """Streams frames into ffmpeg and muxes the audio track in the same pass."""
 
-    def __init__(self, path: str | Path, quality: Quality, audio_path: str | Path):
+    def __init__(self, path: str | Path, quality: Quality, audio_path: str | Path, audio_preroll: float = 0.0):
+        """``audio_preroll``: seconds at the start of the WAV that play before
+        the video starts. They are encoded and then trimmed by the MP4's edit
+        list, so the AAC encoder never starts cold on a loud first sample
+        (it smears a transient at sample 0); used for loops whose first frame
+        has a chord on it."""
         self.path = Path(path)
         q = quality
+        offset = ["-itsoffset", f"{-audio_preroll:.6f}"] if audio_preroll > 0 else []
         cmd = [
             ffmpeg_path(), "-y", "-hide_banner", "-loglevel", "error",
             "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{q.width}x{q.height}", "-r", str(q.fps), "-i", "-",
-            "-i", str(audio_path),
+            *offset, "-i", str(audio_path),
             "-map", "0:v:0", "-map", "1:a:0",
             # RGB -> BT.709 limited-range YUV, tagged so players and YouTube agree on colors
             "-vf", "scale=out_color_matrix=bt709:out_range=tv:flags=accurate_rnd+full_chroma_int",

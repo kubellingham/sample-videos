@@ -12,6 +12,8 @@ YAML config ──► simulation (pymunk, fixed 240 Hz clock)
 Samples (`configs/shrinking_ring.yaml`): [`samples/shrinking_ring_seed7.mp4`](samples/shrinking_ring_seed7.mp4)
 (trapped ending) and [`samples/shrinking_ring_seed10.mp4`](samples/shrinking_ring_seed10.mp4)
 (escape ending), each with a contact sheet.
+`configs/polyrhythm_loop.yaml`: [`samples/polyrhythm_loop_seed1.mp4`](samples/polyrhythm_loop_seed1.mp4)
+(one 45 s cycle that loops with no seam) and its contact sheet.
 
 ## Setup
 
@@ -86,7 +88,9 @@ params:                  # optional format params
   are stamped in video time, so sound still lands on the right frame.
 * **Seamless loop.** The ending holds for `outro` seconds, then the last
   `loop_xfade` seconds crossfade into frame 0 (picture) and fade to silence
-  (audio), so Shorts' auto-replay has no visible or audible seam.
+  (audio), so Shorts' auto-replay has no visible or audible seam. Formats
+  whose motion is periodic (`polyrhythm_loop`) loop *exactly* instead, with
+  no crossfade at all; see below.
 * **Shorts safe zone.** All text stays out of the bottom 20% and the right
   12% of the frame, where the Shorts UI sits. The hook is laid out inside
   the safe area, and the renderer moves any label that would cross into it.
@@ -119,7 +123,10 @@ Primitives (`satisfy/scene.py`): `Circle` (glow, highlight, outline, trails by
 `id`), `Arc` (rings, gaps, flying shards), `Ripple`, `Particle`, `Label`, plus
 frame `Effects` (flash, desaturate/tint, zoom, shake, vignette). Event kinds
 the sound sets understand: `bounce`, `spawn`, `hit`, `sealed`, `escape`,
-`freeze`.
+`freeze`, and `note` (the format picks the pitch: `data: {"degree": d}` plays
+scale degree `d` counted up the set's pentatonic scale; `data["pan"]` sets
+the stereo position). A format can set `default_duration` to use when a
+config leaves `duration` out.
 
 ### shrinking_ring
 
@@ -147,6 +154,40 @@ is a race. Main params: `mode`, `ring_radius`, `ring_shrink`,
 `first_bounce`, `grow` (`auto` scales with duration), `slowmo`,
 `max_balls`, `spawn_from`, `trail`, `counter`, `escape_text`,
 `trapped_text`, `outro`, `loop_xfade`, `tries`, `pace_window`.
+
+### polyrhythm_loop
+
+Concentric rings (`rings`, default 12), one dot each. Ring `i` (0 = the
+outermost) laps `base + i` times per cycle (default 10…21), so every dot is
+back at the top at exactly the end of the cycle. Each time a dot crosses the
+top line it plays a note (ring index → pentatonic degree: outer rings low,
+inner rings high) and its ring flashes. Along the way the dots line up into
+spokes at simple fractions of the cycle (two at 1/2, three at 1/3, …).
+
+The video is exactly one cycle (`cycle` defaults to the video duration, and
+the format's default duration is 45 s) and loops with no crossfade:
+
+* **Picture.** Motion is closed-form, not simulated: every position, flash
+  and ripple is a function of the time modulo the cycle. The frame after the
+  last one is frame 0 exactly, and frame 0's trails come from the end of the
+  cycle.
+* **Note timing.** Notes start at the exact crossing instants
+  (`audio_timing: exact`, sample-accurate) rather than snapping to frames,
+  so the polyrhythm stays exact at any frame rate. A note can lead its flash
+  by up to one frame.
+* **Sound tails wrap around.** The timeline is marked `periodic`: the audio
+  is rendered over two cycles and the second copy is kept, so the opening
+  carries the reverb tails of the closing notes, as on a replay.
+* **Clean start in the MP4.** The AAC encoder smears a loud attack on the
+  very first sample of a file, and here a 12-note chord sits on it. The
+  pipeline encodes one second of the cycle's end as a lead-in and trims it
+  with the MP4 edit list (`-itsoffset`), so the track still starts at 0 and
+  lasts exactly one cycle.
+
+The seed changes only the key and palette (the motion is fixed by the
+params). Params: `rings`, `base`, `cycle`, `center`, `outer_radius`,
+`inner_radius`, `ring_width`, `dot_radius`, `direction` (cw/ccw), `flash`
+(flash decay, seconds), `trail`.
 
 ## Sound sets
 
@@ -182,4 +223,7 @@ pip install pytest && python -m pytest -q
 Covers determinism, preview/final parity (including slow motion), the
 mid-flight opening, the loop seam, safe-zone text, frame-exact note onsets,
 every sound set, config validation, and an end-to-end
-batch → keepers → final run (needs ffmpeg).
+batch → keepers → final run (needs ffmpeg). For `polyrhythm_loop`: one note
+per top crossing at the exact instant, frames past the end equal frames 0,
+1, 2, the looped audio equals a continuous three-cycle performance across
+the seam, and the encoded MP4 starts with the opening chord intact.

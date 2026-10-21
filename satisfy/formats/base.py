@@ -86,6 +86,7 @@ class Simulation:
     description: str = ""
     defaults: dict = {}
     preroll: float = 0.0  # seconds simulated before frame 0
+    default_duration: float | None = None  # used when a config leaves out `duration`
 
     @classmethod
     def all_defaults(cls) -> dict:

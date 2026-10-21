@@ -11,6 +11,7 @@ mapping (keys listed in each class's ``options``).
 from __future__ import annotations
 
 import random
+from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -77,6 +78,15 @@ class SoundSet:
         vel = 0.5 + 0.5 * e.strength
         self.play(mix, self.next_note(index, e), start, vel, pan)
 
+    def degree_note(self, degree: int) -> int:
+        """MIDI note for a scale degree counted up the major pentatonic from the set's root."""
+        return self.final_chord()[0] + 12 * (degree // 5) + SCALES["major"][degree % 5]
+
+    def on_note(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        """A note chosen by the format (``data['degree']``), e.g. one pitch per ring."""
+        vel = 0.4 + 0.45 * e.strength
+        self.play(mix, self.degree_note(int(e.data.get("degree", 0))), start, vel, pan)
+
     def on_spawn(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         mix.add(synth.pop(900 + 40 * (e.data.get("count", 0) % 12), seed=start), start, gain=0.22, pan=pan)
 
@@ -120,15 +130,34 @@ class SoundSet:
 
     # -- render ---------------------------------------------------------------
     def render(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
+        if timeline.periodic:
+            return self._render_periodic(timeline, fps, n_frames)
+        return self._render(timeline, fps, n_frames)
+
+    def _render_periodic(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
+        """The video is one cycle of a loop. Render two cycles back to back and
+        keep the second: its start already carries the reverb and ring-out of
+        the end of the cycle, so the audio wraps around with no seam."""
+        length = n_frames / fps
+        self.period = length
+        events = list(timeline.events) + [replace(e, t=e.t + length) for e in timeline.events]
+        twice = Timeline(events=events, ending="none", end_t=2 * length, length=2 * length,
+                         audio_timing=timeline.audio_timing)
+        audio = self._render(twice, fps, 2 * n_frames)
+        return audio[:, n_frames * SR // fps:]
+
+    def _render(self, timeline: Timeline, fps: int, n_frames: int) -> np.ndarray:
         n_samples = n_frames * SR // fps
+        exact = timeline.audio_timing == "exact"
         mix = Mixer(n_samples)
         self.bed(mix, timeline, fps)
         last_note = -1e9
         last_hit = -1e9
         index = 0
         for e in sorted(timeline.events, key=lambda ev: ev.t):
-            start = frame_of(e.t, fps) * SR // fps
-            pan = max(-1.0, min(1.0, (e.x - 540.0) / 540.0)) * 0.45
+            # notes start on the first sample of their frame, or at their exact time
+            start = int(round(e.t * SR)) if exact else frame_of(e.t, fps) * SR // fps
+            pan = float(e.data["pan"]) if "pan" in e.data else max(-1.0, min(1.0, (e.x - 540.0) / 540.0)) * 0.45
             if e.kind == "bounce":
                 if e.t - last_note < float(self.o.min_gap):
                     continue
@@ -210,6 +239,9 @@ class Pentatonic(SoundSet):
     def final_chord(self) -> list[int]:
         return [self.root + i for i in TRIADS[self.o.scale]]
 
+    def degree_note(self, degree: int) -> int:
+        return self.root + 12 * (degree // 5) + SCALES[self.o.scale][degree % 5]
+
 
 class Melody(SoundSet):
     name = "melody"
@@ -281,6 +313,12 @@ class Tactile(SoundSet):
         mix.add(synth.pop(freq, seed=index), start, gain=vel * 0.9, pan=pan)
         mix.add(synth.click(1.0, bright=0.9, seed=index), start, gain=vel * 0.5, pan=pan)
 
+    def on_note(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        vel = 0.4 + 0.45 * e.strength
+        freq = midi_to_hz(self.degree_note(int(e.data.get("degree", 0))) - 12)
+        mix.add(synth.pop(freq, seed=start), start, gain=vel * 0.9, pan=pan)
+        mix.add(synth.click(1.0, bright=0.9, seed=start), start, gain=vel * 0.5, pan=pan)
+
     def on_slowmo(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         """An accelerating stream of rising pops into the burst."""
         dur = float(e.data.get("duration", 0.4))
@@ -337,8 +375,14 @@ class Ambient(SoundSet):
     def setup(self) -> None:
         self.root = 48 + _pick_key(self.o, self.rng)  # octave 3
 
-    def bed(self, mix: Mixer, timeline: Timeline, fps: int) -> None:
+    def _chord_seconds(self) -> float:
+        """Chord length; in a loop, adjusted so a whole number of chords fills the period."""
         seg = float(self.o.chord_seconds)
+        period = getattr(self, "period", None)
+        return period / max(1, round(period / seg)) if period else seg
+
+    def bed(self, mix: Mixer, timeline: Timeline, fps: int) -> None:
+        seg = self._chord_seconds()
         end = timeline.end_t if timeline.ending != "none" else mix.n / SR
         t = 0.0
         while t < end:
@@ -350,7 +394,10 @@ class Ambient(SoundSet):
             t += seg
 
     def _chord_at(self, t: float) -> list[int]:
-        return self.PROGRESSION[int(t // float(self.o.chord_seconds)) % len(self.PROGRESSION)]
+        period = getattr(self, "period", None)
+        if period:
+            t %= period  # the progression restarts with the loop
+        return self.PROGRESSION[int(t // self._chord_seconds() + 1e-9) % len(self.PROGRESSION)]
 
     def on_bounce(self, mix: Mixer, e: Event, start: int, pan: float, index: int) -> None:
         vel = 0.45 + 0.4 * e.strength

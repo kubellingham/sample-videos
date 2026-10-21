@@ -7,10 +7,11 @@ import tempfile
 import time
 from pathlib import Path
 
+import numpy as np
 import skia
 
 from . import formats, palettes
-from .audio import render_audio, write_wav
+from .audio import SR, render_audio, write_wav
 from .config import Quality, VideoConfig
 from .encode import VideoWriter
 from .render import Renderer
@@ -32,15 +33,21 @@ def render_video(cfg: VideoConfig, quality: Quality, out_path: str | Path, poste
     sim, palette = simulate(cfg, quality.fps)
     tl = sim.timeline
     log(f"  simulated {cfg.slug}: {tl.ending} at {tl.end_t:.1f}s, {sim.n_frames} frames "
-        f"({sim.length:.1f}s), {tl.counts().get('bounce', 0)} bounces")
+        f"({sim.length:.1f}s), events: {', '.join(f'{k} {v}' for k, v in tl.counts().items()) or 'none'}")
 
     audio = render_audio(tl, cfg.sound_set, cfg.sound, cfg.seed, quality.fps, sim.n_frames)
     renderer = Renderer(sim, palette, cfg.hook_text, quality.width, quality.height)
 
     with tempfile.TemporaryDirectory() as tmp:
         wav = Path(tmp) / "audio.wav"
+        preroll = 0.0
+        if tl.periodic:
+            # a loop: lead in with the end of the cycle (what a looping viewer hears before frame 0)
+            pre = min(SR, audio.shape[1])
+            audio = np.concatenate([audio[:, -pre:], audio], axis=1)
+            preroll = pre / SR
         write_wav(wav, audio)
-        writer = VideoWriter(out_path, quality, wav)
+        writer = VideoWriter(out_path, quality, wav, audio_preroll=preroll)
         step = max(1, sim.n_frames // 10)
         try:
             for n in range(sim.n_frames):

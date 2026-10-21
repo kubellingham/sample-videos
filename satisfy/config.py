@@ -44,6 +44,16 @@ class VideoConfig:
         return f"{self.name or self.format}_seed{self.seed}"
 
 
+def _format_duration(fmt: str) -> float:
+    """Default duration when a config leaves it out: the format's own, else 28 s."""
+    from . import formats  # late import: formats depend on this module
+
+    try:
+        return float(getattr(formats.get(fmt), "default_duration", None) or 28.0)
+    except ValueError:
+        return 28.0
+
+
 def from_dict(d: dict, name: str = "") -> VideoConfig:
     unknown = set(d) - KNOWN_KEYS
     if unknown:
@@ -55,7 +65,7 @@ def from_dict(d: dict, name: str = "") -> VideoConfig:
         seed=int(d.get("seed", 1)),
         palette=d.get("palette", "neon"),
         sound_set=str(d.get("sound_set", "pentatonic")),
-        duration=float(d.get("duration", 28.0)),
+        duration=float(d["duration"] if d.get("duration") is not None else _format_duration(str(d["format"]))),
         hook_text=str(d.get("hook_text") or ""),
         sound=dict(d.get("sound") or {}),
         params=dict(d.get("params") or {}),

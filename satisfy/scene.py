@@ -55,6 +55,19 @@ class Arc:
 
 
 @dataclass(slots=True)
+class Line:
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    width: float
+    color: Color
+    alpha: float = 1.0
+    glow: float = 0.0
+    round_caps: bool = True
+
+
+@dataclass(slots=True)
 class Ripple:
     """Expanding outline circle."""
 

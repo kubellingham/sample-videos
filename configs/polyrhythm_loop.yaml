@@ -1,0 +1,15 @@
+# 12 rings; ring i laps (base + i) times per cycle, so all dots line up again at
+# the end of the cycle. The video is exactly one cycle and loops with no seam.
+format: polyrhythm_loop
+seed: 1
+palette: aurora
+sound_set: pentatonic
+duration: 45             # = the cycle: every dot is back at the top exactly at the end
+hook_text: "Wait for them all to line up again"
+
+sound:
+  instrument: glock      # bell-like notes ring out; try marimba or kalimba
+
+params:
+  rings: 12
+  base: 10               # outer ring laps 10 times per cycle, inner ring 21

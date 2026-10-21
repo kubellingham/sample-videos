@@ -125,7 +125,7 @@ TEMPLATE = r"""<!doctype html>
   .seed { font-weight: 700; }
   .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; color: #0b0b0f; }
   .badge.escape { background: var(--escape); } .badge.trapped { background: var(--trapped); }
-  .badge.timeout { background: var(--timeout); }
+  .badge.timeout { background: var(--timeout); } .badge.loop { background: #c9a7ff; }
   .stats { color: var(--muted); font-size: 12px; width: 100%; }
   .star { margin-left: auto; font-size: 18px; line-height: 1; padding: 4px 10px; }
   .card.keep .star { background: var(--keep); color: #1a1400; border-color: var(--keep); }

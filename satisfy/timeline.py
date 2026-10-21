@@ -38,6 +38,8 @@ class Timeline:
     length: float = 0.0  # total video length in seconds
     variant: int = 0  # physics variant chosen by pacing
     loop_t: float = 0.0  # video time where the crossfade back into frame 0 starts
+    periodic: bool = False  # the video is exactly one cycle of a loop (audio wraps around)
+    audio_timing: str = "frame"  # frame: notes start on their frame | exact: at the event's exact time
 
     def add(self, event: Event) -> Event:
         self.events.append(event)
@@ -56,6 +58,8 @@ class Timeline:
             "length": round(self.length, 4),
             "variant": self.variant,
             "loop_t": round(self.loop_t, 4),
+            "periodic": self.periodic,
+            "audio_timing": self.audio_timing,
             "counts": self.counts(),
             "events": [
                 {**asdict(e), "t": round(e.t, 6), "x": round(e.x, 2), "y": round(e.y, 2),
@@ -71,6 +75,7 @@ class Timeline:
     def load(cls, path: str | Path) -> "Timeline":
         d = json.loads(Path(path).read_text())
         tl = cls(ending=d["ending"], end_t=d["end_t"], length=d["length"], variant=d.get("variant", 0),
-                 loop_t=d.get("loop_t", 0.0))
+                 loop_t=d.get("loop_t", 0.0), periodic=d.get("periodic", False),
+                 audio_timing=d.get("audio_timing", "frame"))
         tl.events = [Event(**e) for e in d["events"]]
         return tl

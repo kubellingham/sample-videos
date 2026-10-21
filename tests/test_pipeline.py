@@ -12,7 +12,7 @@ from satisfy.batch import run_batch, run_final
 from satisfy.config import PREVIEW, VideoConfig
 from satisfy.encode import probe
 from satisfy.palettes import resolve
-from satisfy.pipeline import render_video
+from satisfy.pipeline import render_video, simulate
 
 ROOT = Path(__file__).resolve().parents[1]
 needs_ffmpeg = pytest.mark.skipif(not shutil.which("ffmpeg"), reason="ffmpeg not installed")
@@ -61,3 +61,37 @@ def test_batch_gallery_and_final(tmp_path):
     results = run_final(batch, None, tmp_path / "final", quality=PREVIEW)
     assert [r["seed"] for r in results] == [4]
     assert (tmp_path / "final" / "t_seed4.mp4").exists()
+
+
+def _decode_audio(path):
+    import subprocess
+
+    import numpy as np
+
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "f32le", "-ac", "2", "-ar", "48000", "-"],
+                         capture_output=True, check=True).stdout
+    return np.frombuffer(raw, dtype=np.float32).reshape(-1, 2).T
+
+
+@needs_ffmpeg
+def test_loop_audio_starts_clean_and_in_sync(tmp_path):
+    """A loop's first frame has a chord on it. The MP4's audio must start with
+    that chord intact and on time (the encoder gets a pre-roll from the end of
+    the cycle, trimmed by the edit list), and last exactly one cycle."""
+    import numpy as np
+
+    from satisfy.audio import SR, render_audio
+
+    cfg = VideoConfig(format="polyrhythm_loop", seed=1, duration=4.0, params={"rings": 4, "base": 2})
+    out = tmp_path / "loop.mp4"
+    render_video(cfg, PREVIEW, out, log=lambda *_: None)
+    sim, _ = simulate(cfg, PREVIEW.fps)
+    src = render_audio(sim.timeline, cfg.sound_set, cfg.sound, cfg.seed, PREVIEW.fps, sim.n_frames)
+    dec = _decode_audio(out)
+    n = src.shape[1]
+    assert 0 <= dec.shape[1] - n < 1024  # one cycle (plus the last AAC frame's padding), no pre-roll left in
+    head = slice(0, SR // 25)  # the first 40 ms: the t = 0 chord's attack
+    scale = float(np.sum(src[:, head] * dec[:, head]) / np.sum(dec[:, head] ** 2))
+    assert 0.8 < scale < 1.25
+    # without the pre-roll the encoder smears this attack (~45% of peak off); with it, ~7.5% at 96k
+    assert np.abs(src[:, head] - scale * dec[:, head]).max() < 0.15 * np.abs(src).max()

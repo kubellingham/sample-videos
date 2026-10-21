@@ -21,7 +21,7 @@ import skia
 from . import HEIGHT, SAFE_BOTTOM, SAFE_RIGHT, WIDTH
 from .formats.base import SimResult
 from .palettes import Palette, mix
-from .scene import Arc, Circle, Effects, Label, Particle, Ripple, Scene
+from .scene import Arc, Circle, Effects, Label, Line, Particle, Ripple, Scene
 
 FONT_CANDIDATES = ["Inter", "Montserrat", "Poppins", "Roboto", "DejaVu Sans", "Liberation Sans", "Arial"]
 WEIGHTS = {"regular": 400, "bold": 700, "black": 900}
@@ -279,6 +279,18 @@ class Renderer:
         if transformed:
             c.restore()
 
+    def _draw_line(self, c: skia.Canvas, o: Line) -> None:
+        if o.alpha <= 0.003:
+            return
+        cap = skia.Paint.kRound_Cap if o.round_caps else skia.Paint.kButt_Cap
+        if o.glow > 0:
+            c.drawLine(o.x0, o.y0, o.x1, o.y1, skia.Paint(
+                AntiAlias=True, Color=_c(o.color, 0.55 * o.glow * o.alpha), Style=skia.Paint.kStroke_Style,
+                StrokeWidth=o.width * 3, StrokeCap=cap, MaskFilter=self._blur(o.width * 1.5)))
+        c.drawLine(o.x0, o.y0, o.x1, o.y1, skia.Paint(
+            AntiAlias=True, Color=_c(o.color, o.alpha), Style=skia.Paint.kStroke_Style, StrokeWidth=o.width,
+            StrokeCap=cap))
+
     def _draw_ripple(self, c: skia.Canvas, o: Ripple) -> None:
         if o.alpha <= 0.003 or o.r <= 0:
             return
@@ -328,6 +340,8 @@ class Renderer:
                 self._draw_arc(c, o)
             elif isinstance(o, Ripple):
                 self._draw_ripple(c, o)
+            elif isinstance(o, Line):
+                self._draw_line(c, o)
             elif isinstance(o, Particle):
                 self._draw_particle(c, o)
             elif isinstance(o, Label):
