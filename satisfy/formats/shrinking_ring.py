@@ -14,8 +14,12 @@ the ball still fits through it. The ring tints red as the ball's diameter
 approaches the gap's width, and the shrink speeds up over the final third.
 
 The video opens mid-flight (``preroll``) with the first bounce inside
-``first_bounce`` seconds. An escape plays ``slowmo`` seconds of quarter-speed
-slow motion as the ball passes the gap, timed from the rehearsal, then bursts.
+``first_bounce`` seconds. Once the ball can no longer fit through the gap
+(sealed), its growth accelerates so the freeze lands ``seal_fill`` seconds
+later. An escape plays ``slowmo`` seconds of quarter-speed slow motion as the
+ball passes the gap, timed from the rehearsal, then bursts; a camera pan and
+zoom, also planned from the rehearsal, keep the escaping ball inside the frame
+and out of the Shorts UI.
 """
 
 from __future__ import annotations
@@ -24,20 +28,30 @@ import math
 
 import pymunk
 
+from collections import deque
+
+from .. import SAFE_BOTTOM, SAFE_RIGHT
 from ..palettes import mix
 from ..scene import Arc, Circle, Effects, Label, Particle, Ripple, Scene
 from ..timeline import Event
 from .base import PHYSICS_HZ, Simulation
 
 BALL, RING = 1, 2
-GROW_AUTO = 85.0  # grow = GROW_AUTO / seconds of action (calibrated for the default ring)
+GROW_AUTO = 55.0  # grow = GROW_AUTO / seconds of action (calibrated for the default ring)
 SLOW = 4  # video ticks per physics step during slow motion (quarter speed)
+TRACE_STEPS = 40  # rehearsal keeps this many recent positions per ball (covers the slow stretch)
+CAM_LEAD = 0.35  # seconds the escape camera takes to pan into place before the slow motion
+FRAME_MARGIN = 16.0  # px the escaping ball keeps from the frame / Shorts UI edges
+HOOK_CLEAR = 440.0  # px from the top: keep the escaping ball below the hook text
+POP = 0.3  # seconds: after the burst the escaped ball brakes and pops (fades out, swelling)
+POP_BRAKE = 0.08  # velocity decay time constant (s) while it pops; travel = speed * this
+POP_SWELL = 0.25  # how much the ball swells as it pops
 DANGER = (255, 60, 80)  # ring tint as the ball outgrows the gap
 
 
 class _Ball:
     __slots__ = ("id", "body", "shape", "r", "target_r", "color", "hero", "born",
-                 "last_wall", "pending", "hit_t", "escaped", "touch_since", "touch_seen")
+                 "last_wall", "pending", "hit_t", "escaped", "touch_since", "touch_seen", "trace")
 
     def __init__(self, id_, body, shape, r, color, hero, born):
         self.id = id_
@@ -54,6 +68,7 @@ class _Ball:
         self.escaped = False
         self.touch_since: float | None = None  # start of the current wall contact
         self.touch_seen = -1.0  # last step the ball touched the wall
+        self.trace: deque | None = None  # recent positions (rehearsal only, to frame the escape)
 
 
 class _Spark:
@@ -91,7 +106,7 @@ class ShrinkingRing(Simulation):
     defaults = {
         "mode": "grow",  # grow | spawn
         "center": [540, 940],
-        "ring_radius": 452.0,  # inner radius at t=0 (px); the ring spans ~85% of the width
+        "ring_radius": 407.0,  # inner radius at t=0 (px); the ring spans ~78% of the width
         "ring_min_radius": 230.0,
         "ring_shrink": 3.0,  # steady shrink (px/s)
         "ring_squeeze": 90.0,  # extra shrink over the final third, accelerating (px)
@@ -106,6 +121,7 @@ class ShrinkingRing(Simulation):
         "grow": "auto",  # px added to the radius per bounce (grow mode); auto scales with duration
         "grow_speed": 140.0,  # max visual growth rate (px/s)
         "fill": 0.93,  # grow mode: trapped once ball radius >= fill * ring radius
+        "seal_fill": 2.5,  # grow mode: once sealed, the ball fills the ring this many seconds later
         "slowmo": 0.4,  # escape: seconds of quarter-speed slow motion before the burst (0 = off)
         "spawn_radius": 16.0,  # spawn mode: radius of new balls
         "spawn_from": "hero",  # hero: only the first ball's bounces spawn | any
@@ -176,6 +192,8 @@ class ShrinkingRing(Simulation):
         self.last_color = self.palette.ring
         self.last_spawn_t = -10.0
         self.sealed_t: float | None = None
+        self.sealed_r = 0.0
+        self.escape_vel = (0.0, 0.0)
         self.escape_ball: _Ball | None = None
         self.color_i = 0
 
@@ -192,6 +210,13 @@ class ShrinkingRing(Simulation):
             steps = round(float(p.slowmo) / SLOW * PHYSICS_HZ)
             start = self.slow_start_step(s_e - steps)
             self.slow_from, self.slow_to = start / PHYSICS_HZ, (start + steps) / PHYSICS_HZ
+        # Camera for the escape: the rehearsal recorded where the ball travels
+        # during the slow stretch; pan/zoom so all of it stays in the safe area.
+        self.cam: tuple[float, float, float] | None = None
+        if self.slow_from is not None:
+            box = self.plan.of_kind("escape")[0].data.get("box")
+            if box:
+                self.cam = self._frame_escape(box)
 
         space.on_collision(BALL, RING, begin=self._on_wall, pre_solve=self._on_wall_touch,
                            separate=self._on_wall_separate)
@@ -353,9 +378,17 @@ class ShrinkingRing(Simulation):
 
         # grow mode: ease the radius towards its target
         if p.mode == "grow" and not self.ended:
+            speed = float(p.grow_speed)
+            if self.sealed_t is not None and float(p.seal_fill) > 0:
+                # sealed: accelerate (ease-in) to a full ring seal_fill seconds later
+                hero = self.balls[0]
+                k = min(1.0, (t - self.sealed_t) / float(p.seal_fill))
+                full = float(p.fill) * self.R + 2.0
+                hero.target_r = max(hero.target_r, self.sealed_r + (full - self.sealed_r) * k * k)
+                speed = 600.0
             for ball in self.balls:
                 if ball.r < ball.target_r:
-                    ball.r = min(ball.target_r, ball.r + float(p.grow_speed) * dt)
+                    ball.r = min(ball.target_r, ball.r + speed * dt)
                     ball.shape.unsafe_set_radius(ball.r)
 
         self.space.step(dt)
@@ -369,6 +402,16 @@ class ShrinkingRing(Simulation):
                 self._check_trapped(t)
 
         self._update_particles(dt, t)
+        if self.escape_ball is not None:
+            body, (vx, vy) = self.escape_ball.body, self.escape_vel
+            body.position = (body.position.x + vx * dt, body.position.y + vy * dt)
+            k = math.exp(-dt / POP_BRAKE)
+            self.escape_vel = (vx * k, vy * k)
+        if self.plan is None and not self.ended:
+            for ball in self.balls:  # rehearsal: remember recent positions
+                if ball.trace is None:
+                    ball.trace = deque(maxlen=TRACE_STEPS)
+                ball.trace.append((ball.body.position.x, ball.body.position.y))
 
     def _resolve_bounces(self, t: float) -> None:
         p = self.p
@@ -406,8 +449,9 @@ class ShrinkingRing(Simulation):
             self._sparks_at(hx, hy, dx / d, dy / d, ball.color, t, count=7 if ball.hero else 2)
 
             if p.mode == "grow":
-                cap = self.R * float(p.fill) + 2.0
-                ball.target_r = min(cap, ball.target_r + self.grow)
+                if self.sealed_t is None or float(p.seal_fill) <= 0:
+                    cap = self.R * float(p.fill) + 2.0
+                    ball.target_r = min(cap, ball.target_r + self.grow)
             elif not spawned_this_step and len(self.balls) < int(p.max_balls):
                 if (p.spawn_from == "hero" and ball.hero) or (
                     p.spawn_from == "any" and t - self.last_spawn_t >= float(p.spawn_cooldown)
@@ -460,6 +504,46 @@ class ShrinkingRing(Simulation):
         rc = self.R + self.w / 2
         return 2 * rc * math.sin(math.radians(self.gap / 2)) - self.w
 
+    def _escape_box(self, ball: _Ball) -> list[float]:
+        """Area the escaping ball covers during the slow stretch: its last
+        positions (the stretch starts at most this far before the crossing)
+        plus a short ballistic extrapolation (the burst lands up to one frame
+        grid after the crossing)."""
+        dt = 1.0 / PHYSICS_HZ
+        steps = round(float(self.p.slowmo) / SLOW * PHYSICS_HZ)
+        pos, v = ball.body.position, ball.body.velocity
+        pts = list(ball.trace)[-steps:] + [(pos.x, pos.y)]
+        x, y = pos.x, pos.y
+        for i in range(1, 17):
+            tau = i * dt
+            pts.append((x + v.x * tau, y + v.y * tau + 0.5 * self.g * tau * tau))
+        x, y = pts[-1]  # then it brakes to a stop while popping (and swelling)
+        pts.append((x + v.x * POP_BRAKE, y + v.y * POP_BRAKE))
+        r = ball.r * (1.0 + POP_SWELL)
+        return [round(min(px for px, _ in pts) - r, 1), round(min(py for _, py in pts) - r, 1),
+                round(max(px for px, _ in pts) + r, 1), round(max(py for _, py in pts) + r, 1)]
+
+    def _frame_escape(self, box: list[float]) -> tuple[float, float, float]:
+        """(zoom, pan_x, pan_y) that keep ``box`` inside the frame, out of the
+        Shorts UI (right 12%, bottom 20%) and below the hook, at every zoom from
+        1 up to the returned one. Zoom is about the ring center; prefers the
+        smallest pan."""
+        x0, y0, x1, y1 = box
+        limits = ((x0, x1, self.cx, FRAME_MARGIN, SAFE_RIGHT - FRAME_MARGIN),
+                  (y0, y1, self.cy, HOOK_CLEAR, SAFE_BOTTOM - FRAME_MARGIN))
+        for zoom in (1.06, 1.03, 1.0):
+            pans = []
+            for a, b, c, lo_lim, hi_lim in limits:
+                lo = max(lo_lim - (s * (a - c) + c) for s in (1.0, zoom))
+                hi = min(hi_lim - (s * (b - c) + c) for s in (1.0, zoom))
+                if lo > hi:
+                    break
+                pans.append(min(max(0.0, lo), hi))
+            else:
+                return zoom, pans[0], pans[1]
+        # too big to fit (should not happen): center it in the safe area
+        return 1.0, (limits[0][3] + limits[0][4] - x0 - x1) / 2, (limits[1][3] + limits[1][4] - y0 - y1) / 2
+
     def _check_escape(self, t: float) -> None:
         """A ball whose center has crossed the ring line (only possible through
         the gap) while moving outwards is through: burst."""
@@ -477,8 +561,11 @@ class ShrinkingRing(Simulation):
         p = self.p
         if p.mode == "grow":
             hero = self.balls[0]
-            if self.sealed_t is None and 2 * hero.target_r > self._opening():
+            pos = hero.body.position
+            inside = math.hypot(pos.x - self.cx, pos.y - self.cy) + hero.r <= self.R + 2.0  # not mid-gap
+            if self.sealed_t is None and inside and 2 * hero.r > self._opening():  # it can't fit any more
                 self.sealed_t = t
+                self.sealed_r = hero.target_r
                 self.emit("sealed", hero.body.position.x, hero.body.position.y, strength=0.6)
             if hero.r >= float(p.fill) * self.R:
                 self._freeze(t, "trapped")
@@ -502,8 +589,14 @@ class ShrinkingRing(Simulation):
         pos = ball.body.position
         self.escape_ball = ball
         ball.escaped = True
+        # It brakes hard and pops into the confetti instead of flying off-screen.
+        self.escape_vel = (ball.body.velocity.x, ball.body.velocity.y)
+        self.space.remove(ball.body, ball.shape)
         self.hold_timeout = False
-        self.emit("escape", pos.x, pos.y, strength=1.0, ball=ball.id, pt=round(t, 6))
+        data = {"ball": ball.id, "pt": round(t, 6), "r": round(ball.r, 2)}
+        if ball.trace:
+            data["box"] = self._escape_box(ball)
+        self.emit("escape", pos.x, pos.y, strength=1.0, **data)
         self.finish("escape")
         # Shatter the ring into flying shards.
         theta = math.degrees(self.ring_body.angle)
@@ -621,28 +714,36 @@ class ShrinkingRing(Simulation):
             if pos.y > 2400:
                 continue
             r = ball.r
+            alpha = 1.0
             age = t - ball.born
             if not ball.hero and age < 0.15:
                 r *= _ease_out(age / 0.15)
+            if ball is self.escape_ball and end_age >= 0:
+                k = end_age / POP
+                if k >= 1.0:
+                    continue
+                r *= 1.0 + POP_SWELL * _ease_out(k)
+                alpha = (1.0 - k) ** 1.5
             hit = math.exp(-(t - ball.hit_t) / 0.12) if ball.hit_t >= 0 else 0.0
-            items.append(Circle(pos.x, pos.y, r, ball.color,
+            items.append(Circle(pos.x, pos.y, r, ball.color, alpha=alpha,
                                 glow=(0.75 if ball.hero else 0.35) + 0.25 * hit,
                                 outline=(255, 255, 255) if hit > 0.05 or (ball.hero and many) else None,
                                 outline_width=3.0 + 4.0 * hit if hit > 0.05 else 3.0,
                                 id=ball.id, trail=float(p.trail) if (ball.hero or not many) else 0.0))
 
         fx = Effects(zoom_x=self.cx, zoom_y=self.cy)
-        if self.slow_from is not None and t >= self.slow_from - 1e-9:
-            # push in on the gap while time slows, ease back out after the burst
-            k = min(1.0, (t - self.slow_from) / max(1e-6, self.slow_to - self.slow_from))
-            if end_age >= 0:
-                k = 1.0 - _ease_out(end_age / 0.35)
-            gap_dir = self.ring_body.angle  # the ring stops turning once it shatters
-            # zooming about the gap itself keeps the gap (and the ball in it) in frame
-            fx.zoom = 1.0 + 0.08 * _smooth(k)
-            fx.zoom_x = self.cx + (self.R + self.w / 2) * math.cos(gap_dir)
-            fx.zoom_y = self.cy + (self.R + self.w / 2) * math.sin(gap_dir)
-            fx.vignette = 0.3 * k
+        if self.cam is not None and t >= self.slow_from - CAM_LEAD - 1e-9:
+            # pan into position just before the slow stretch, push in during it,
+            # hold through the burst, then ease back
+            zoom, pan_x, pan_y = self.cam
+            if end_age >= 0:  # hold until the escaped ball has popped, then ease back
+                pan = push = 1.0 - _ease_out((end_age - POP) / 0.45) if end_age > POP else 1.0
+            else:
+                pan = _smooth((t - (self.slow_from - CAM_LEAD)) / CAM_LEAD)
+                push = _smooth((t - self.slow_from) / max(1e-6, self.slow_to - self.slow_from))
+            fx.pan_x, fx.pan_y = pan_x * pan, pan_y * pan
+            fx.zoom = 1.0 + (zoom - 1.0) * push
+            fx.vignette = 0.3 * push
         if end_age >= 0:
             if ending == "escape":
                 fx.flash = 0.85 * math.exp(-end_age / 0.12)

@@ -101,6 +101,8 @@ class Effects:
     zoom_y: float = 960.0
     shake_x: float = 0.0
     shake_y: float = 0.0
+    pan_x: float = 0.0  # camera pan (applied with the shake, before the zoom)
+    pan_y: float = 0.0
     vignette: float = 0.0  # extra vignette on top of the background one
 
 

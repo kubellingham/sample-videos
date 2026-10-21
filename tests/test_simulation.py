@@ -95,14 +95,87 @@ def test_pacing_prefers_endings_in_window():
     assert 0.55 * 28 <= tl.length <= 28
 
 
-def _escape_seed():
+def _seeds_ending(kind, limit=1, search=40):
     cls = formats.get("shrinking_ring")
-    for seed in range(1, 40):
+    found = []
+    for seed in range(1, search):
         cfg = VideoConfig(format="shrinking_ring", seed=seed)
         _, tl = cls.pick_variant(cfg, resolve("neon", seed))
-        if tl.ending == "escape":
-            return seed
-    pytest.skip("no escape seed found")
+        if tl.ending == kind:
+            found.append(seed)
+            if len(found) == limit:
+                return found
+    if not found:
+        pytest.skip(f"no {kind} seed found")
+    return found
+
+
+def _escape_seed():
+    return _seeds_ending("escape")[0]
+
+
+def _screen_box(o, fx):
+    """Where a circle lands on screen once the frame's camera (pan, shake, zoom) is applied."""
+    def tx(x, y):
+        return (fx.pan_x + fx.shake_x + fx.zoom_x + fx.zoom * (x - fx.zoom_x),
+                fx.pan_y + fx.shake_y + fx.zoom_y + fx.zoom * (y - fx.zoom_y))
+    (x0, y0), (x1, y1) = tx(o.x - o.r, o.y - o.r), tx(o.x + o.r, o.y + o.r)
+    return x0, y0, x1, y1
+
+
+def test_escape_stays_on_screen_and_out_of_the_shorts_ui():
+    from satisfy import SAFE_BOTTOM, SAFE_RIGHT
+    from satisfy.timeline import frame_of
+
+    seeds = _seeds_ending("escape", limit=6, search=30)
+    for seed in seeds:
+        res = _sim(VideoConfig(format="shrinking_ring", seed=seed), 15)
+        (slow,), (esc,) = res.timeline.of_kind("slowmo"), res.timeline.of_kind("escape")
+        ball_id = esc.data["ball"]
+        # from the start of the slow motion until the escaped ball has popped
+        pop_end = frame_of(esc.t + 0.3, 15)
+        for f in range(frame_of(slow.t, 15), pop_end + 1):
+            scene = res.frames[f]
+            balls = [o for o in scene.items if isinstance(o, Circle) and o.id == ball_id]
+            assert balls or f >= pop_end, (seed, f)  # only gone once the pop is over
+            if not balls:
+                continue
+            x0, y0, x1, y1 = _screen_box(balls[0], scene.fx)
+            assert x0 >= 0 and y0 >= 0 and x1 <= SAFE_RIGHT and y1 <= SAFE_BOTTOM, (seed, f, (x0, y0, x1, y1))
+
+
+def test_freeze_lands_soon_after_sealing():
+    for seed in _seeds_ending("trapped", limit=5):
+        res = _sim(VideoConfig(format="shrinking_ring", seed=seed), 15)
+        (sealed,), (freeze,) = res.timeline.of_kind("sealed"), res.timeline.of_kind("freeze")
+        assert 2.0 <= freeze.t - sealed.t <= 3.0
+
+
+def test_a_sealed_ball_never_escapes():
+    for seed in _seeds_ending("escape", limit=6, search=30):
+        tl = _sim(VideoConfig(format="shrinking_ring", seed=seed), 15).timeline
+        assert not tl.of_kind("sealed"), seed
+
+
+def test_counter_fades_out_then_in_during_the_loop():
+    from satisfy.render import Renderer
+
+    cfg = VideoConfig(format="shrinking_ring", seed=7)
+    res = _sim(cfg, 15)
+    r = Renderer(res, resolve("neon", 7), "", 180, 320)
+    end_texts = {o.text for o in res.frames[r.loop_start].overlay}
+    start_texts = {o.text for o in res.frames[0].overlay}
+    assert end_texts != start_texts  # e.g. "77" vs "0"
+    alphas = []
+    for n in range(r.loop_start, res.n_frames):
+        shown = r.overlay_for(n)
+        texts = {o.text for o in shown}
+        assert texts <= end_texts or texts <= start_texts  # never both counters at once
+        counter = [o for o in shown if o.text.isdigit()]
+        alphas.append((counter[0].text, counter[0].alpha) if counter else (None, 0.0))
+    first, last = alphas[0], alphas[-1]
+    assert first[0] in end_texts and last[0] == "0"
+    assert min(a for _, a in alphas) < 0.2  # dips (nearly) out between the two
 
 
 def test_escape_slow_motion_lands_on_the_burst():
@@ -135,7 +208,7 @@ def test_ring_layout_and_final_third_squeeze():
     sim = ShrinkingRing(_cfg(duration=28.0), resolve("neon", 1))
     sim.setup()
     p = sim.p
-    assert 0.83 <= 2 * (p.ring_radius + p.ring_width) / 1080 <= 0.87
+    assert 0.76 <= 2 * (p.ring_radius + p.ring_width) / 1080 <= 0.80
     t2, t3 = sim.t_squeeze, sim.t_end
     early = (sim._ring_radius(0) - sim._ring_radius(t2)) / t2
     late = (sim._ring_radius(t2) - sim._ring_radius(t3)) / (t3 - t2)
