@@ -1,9 +1,13 @@
 """Skia renderer: turns a simulation's scenes into RGBA frames.
 
 The renderer is format-agnostic. It draws the primitives in
-:mod:`satisfy.scene`, applies full-frame effects, and overlays the hook text.
+:mod:`satisfy.scene`, applies full-frame effects, overlays the hook text, and
+crossfades the last frames back into frame 0 so the video loops seamlessly.
 Everything is drawn in the logical 1080x1920 canvas and scaled to the output
 resolution, so previews and finals frame identically.
+
+All text is kept out of the Shorts UI (bottom 20%, right 12%): the hook is laid
+out inside the safe area and any label that would cross into it is moved.
 """
 
 from __future__ import annotations
@@ -14,7 +18,7 @@ from functools import lru_cache
 import numpy as np
 import skia
 
-from . import HEIGHT, WIDTH
+from . import HEIGHT, SAFE_BOTTOM, SAFE_RIGHT, WIDTH
 from .formats.base import SimResult
 from .palettes import Palette, mix
 from .scene import Arc, Circle, Effects, Label, Particle, Ripple, Scene
@@ -39,19 +43,39 @@ def _c(rgb, alpha: float = 1.0) -> int:
 
 
 def wrap_text(text: str, font: skia.Font, max_width: float) -> list[str]:
+    """Wrap to as few lines as fit, then balance them (no one-word orphan)."""
     lines: list[str] = []
     for para in text.split("\n"):
         words = para.split()
-        line = ""
+        if not words:
+            continue
+        greedy, line = [], ""
         for word in words:
             trial = f"{line} {word}".strip()
             if line and font.measureText(trial) > max_width:
-                lines.append(line)
+                greedy.append(line)
                 line = word
             else:
                 line = trial
-        lines.append(line)
-    return [ln for ln in lines if ln] or [""]
+        greedy.append(line)
+        lines += _balance(words, len(greedy), font, max_width) or greedy
+    return lines or [""]
+
+
+def _balance(words: list[str], k: int, font: skia.Font, max_width: float) -> list[str] | None:
+    """Split ``words`` into ``k`` lines minimising the widest line."""
+    if k <= 1 or len(words) > 24:
+        return None
+    from itertools import combinations
+
+    best, best_w = None, float("inf")
+    for cuts in combinations(range(1, len(words)), k - 1):
+        bounds = (0, *cuts, len(words))
+        lines = [" ".join(words[a:b]) for a, b in zip(bounds[:-1], bounds[1:])]
+        widest = max(font.measureText(ln) for ln in lines)
+        if widest <= max_width and widest < best_w:
+            best, best_w = lines, widest
+    return best
 
 
 class Renderer:
@@ -69,8 +93,13 @@ class Renderer:
         self.background_px = self._dither(self.background.toarray(colorType=skia.kRGBA_8888_ColorType,
                                                                   alphaType=skia.kPremul_AlphaType))
         self.background = skia.Image.fromarray(self.background_px, colorType=skia.kRGBA_8888_ColorType)
+        self.hook_bounds: skia.Rect | None = None  # logical-canvas box of the hook text
         self.hook = self._make_hook(hook_text) if hook_text.strip() else None
         self._blur_cache: dict[float, skia.MaskFilter] = {}
+        self.loop_start = sim.loop_start if sim.loop_start is not None else sim.n_frames
+        self.first_frame: np.ndarray | None = None
+        if self.loop_start < sim.n_frames:
+            self.first_frame = self.render(0).copy()
 
     # ------------------------------------------------------------ static art
     def _surface(self, width: int, height: int) -> skia.Surface:
@@ -111,14 +140,20 @@ class Renderer:
         """Pre-render the hook text block (it never changes). Returns the image
         and its top offset in output pixels."""
         pal = self.palette
-        max_w, size = WIDTH - 140, 78.0
+        # centered on the canvas, so the right edge bounds both sides (with room for stroke/shadow)
+        max_w, size = 2 * (SAFE_RIGHT - WIDTH / 2 - 16), 78.0
         tf = typeface("black")
-        while True:
-            font = skia.Font(tf, size)
-            lines = wrap_text(text, font, max_w)
-            if len(lines) <= 3 or size <= 44:
+        # largest size that fits in 2 lines (down to 64px), else 3 lines, else shrink further
+        for max_lines, floor in ((2, 64), (3, 44)):
+            size = 78.0
+            while True:
+                font = skia.Font(tf, size)
+                lines = wrap_text(text, font, max_w)
+                if len(lines) <= max_lines or size <= floor:
+                    break
+                size -= 2
+            if len(lines) <= max_lines:
                 break
-            size -= 4
         metrics = font.getMetrics()
         line_h = size * 1.12
         block_h = line_h * len(lines)
@@ -136,6 +171,8 @@ class Renderer:
         stroke = skia.Paint(AntiAlias=True, Color=_c(pal.text_stroke), Style=skia.Paint.kStroke_Style,
                             StrokeWidth=size * 0.16, StrokeJoin=skia.Paint.kRound_Join)
         fill = skia.Paint(AntiAlias=True, Color=_c(pal.text))
+        pad = size * 0.08 + 4  # half the stroke, plus the shadow offset
+        bounds = None
         for i, line in enumerate(lines):
             w = font.measureText(line)
             x = (WIDTH - w) / 2
@@ -144,6 +181,11 @@ class Renderer:
             c.drawTextBlob(blob, x + 4, baseline + 8, shadow)
             c.drawTextBlob(blob, x, baseline, stroke)
             c.drawTextBlob(blob, x, baseline, fill)
+            box = skia.Rect(x - pad, baseline + metrics.fAscent - pad, x + w + pad, baseline + metrics.fDescent + pad)
+            bounds = box if bounds is None else skia.Rect(min(bounds.left(), box.left()), min(bounds.top(), box.top()),
+                                                         max(bounds.right(), box.right()),
+                                                         max(bounds.bottom(), box.bottom()))
+        self.hook_bounds = bounds
         return surf.makeImageSnapshot(), oy
 
     # --------------------------------------------------------------- helpers
@@ -155,12 +197,22 @@ class Renderer:
             self._blur_cache[key] = mf
         return mf
 
+    def _scene(self, i: int) -> Scene | None:
+        """Frame ``i``; negative indices reach into the pre-roll (for trails)."""
+        if i >= 0:
+            return self.sim.frames[i]
+        pre = self.sim.prelude
+        return pre[len(pre) + i] if -i <= len(pre) else None
+
     def _trail(self, n: int, circle: Circle) -> list[tuple[float, float]]:
         fps = self.sim.fps
         k = max(1, math.ceil(circle.trail * fps))
         pts = []
-        for i in range(max(0, n - k), n):
-            for item in self.sim.frames[i].items:
+        for i in range(n - k, n):
+            scene = self._scene(i)
+            if scene is None:
+                continue
+            for item in scene.items:
                 if isinstance(item, Circle) and item.id == circle.id:
                     pts.append((item.x, item.y))
                     break
@@ -241,14 +293,26 @@ class Renderer:
             c.drawCircle(o.x, o.y, o.r * 2.6, skia.Paint(AntiAlias=True, Color=_c(o.color, 0.25 * o.alpha)))
         c.drawCircle(o.x, o.y, o.r, skia.Paint(AntiAlias=True, Color=_c(o.color, o.alpha)))
 
+    @staticmethod
+    def label_layout(o: Label) -> tuple[skia.Font, float, float, skia.Rect]:
+        """Font, left x, baseline and bounding box of a label, moved if needed
+        so it stays out of the Shorts UI (right 12%, bottom 20%)."""
+        font = skia.Font(typeface(o.weight), max(1.0, o.size))
+        m = font.getMetrics()
+        w = font.measureText(o.text)
+        pad = o.stroke_width / 2 if o.stroke is not None else 0.0
+        x = o.x - w / 2
+        baseline = o.y - (m.fAscent + m.fDescent) / 2
+        x -= max(0.0, x + w + pad - (SAFE_RIGHT - 4))
+        x += max(0.0, pad + 4 - x)
+        baseline -= max(0.0, baseline + m.fDescent + pad - (SAFE_BOTTOM - 4))
+        box = skia.Rect(x - pad, baseline + m.fAscent - pad, x + w + pad, baseline + m.fDescent + pad)
+        return font, x, baseline, box
+
     def _draw_label(self, c: skia.Canvas, o: Label) -> None:
         if o.alpha <= 0.003 or not o.text:
             return
-        font = skia.Font(typeface(o.weight), o.size)
-        m = font.getMetrics()
-        w = font.measureText(o.text)
-        x = o.x - w / 2
-        baseline = o.y - (m.fAscent + m.fDescent) / 2
+        font, x, baseline, _ = self.label_layout(o)
         blob = skia.TextBlob.MakeFromString(o.text, font)
         if o.stroke is not None and o.stroke_width > 0:
             c.drawTextBlob(blob, x, baseline, skia.Paint(
@@ -328,4 +392,10 @@ class Renderer:
         c.restore()
         if self.hook is not None:
             c.drawImage(self.hook[0], 0, self.hook[1])
+        if n >= self.loop_start and self.first_frame is not None:
+            # crossfade into frame 0; the frame after the last one is frame 0 itself
+            span = self.sim.n_frames - self.loop_start
+            a = int(round(256 * (n - self.loop_start + 1) / (span + 1)))
+            mixed = (self.buffer.astype(np.uint16) * (256 - a) + self.first_frame.astype(np.uint16) * a) >> 8
+            self.buffer[...] = mixed.astype(np.uint8)
         return self.buffer

@@ -9,9 +9,9 @@ YAML config ──► simulation (pymunk, fixed 240 Hz clock)
                    └─► scene per frame ──► renderer (skia) ─────────────┴─► ffmpeg ──► MP4
 ```
 
-Sample: [`samples/shrinking_ring_seed7.mp4`](samples/shrinking_ring_seed7.mp4)
-(`configs/shrinking_ring.yaml`, trapped ending) and a 15 fps preview of an
-escape ending, [`samples/shrinking_ring_seed4_escape_preview.mp4`](samples/shrinking_ring_seed4_escape_preview.mp4).
+Samples (`configs/shrinking_ring.yaml`): [`samples/shrinking_ring_seed7.mp4`](samples/shrinking_ring_seed7.mp4)
+(trapped ending) and [`samples/shrinking_ring_seed10.mp4`](samples/shrinking_ring_seed10.mp4)
+(escape ending), each with a contact sheet.
 
 ## Setup
 
@@ -50,7 +50,7 @@ format: shrinking_ring
 seed: 7
 palette: neon            # neon | sunset | ocean | forest | candy | mono | aurora | ember | random
 sound_set: pentatonic    # pentatonic | melody | tactile | ambient
-duration: 40             # maximum length in seconds
+duration: 28             # maximum length in seconds
 hook_text: "Will it escape before it fills the ring?"
 sound:                   # optional sound-set options
   instrument: marimba
@@ -73,12 +73,23 @@ params:                  # optional format params
   `frame × 48000 / fps` (a whole number of samples at 15/30/60 fps). Voices
   have no pre-delay, so the transient lands on the first sample of the frame
   that shows the bounce.
-* **Pacing.** A seed can produce an ending at any time. Before rendering, the
-  format dry-runs up to `tries` physics variants of the seed (no frames,
-  under a second each) and keeps the first whose ending lands in
+* **Pacing and rehearsal.** A seed can produce an ending at any time. Before
+  rendering, the format dry-runs up to `tries` physics variants of the seed
+  (no frames, under a second each) and keeps the first whose ending lands in
   `pace_window` (default 55–100% of `duration`). Motion is never scripted;
   pacing only chooses among honest runs, deterministically. If no variant
-  ends in time, the video ends with a freeze at `duration`.
+  ends in time, the video ends with a freeze at `duration`. The chosen dry
+  run is handed to the real run as a *rehearsal*, so a format can anticipate
+  an event, such as starting slow motion exactly 0.4 s before an escape.
+* **Slow motion without breaking sync.** Physics always steps at 240 Hz; a
+  format can ask for more *video ticks* per step (4 = quarter speed). Events
+  are stamped in video time, so sound still lands on the right frame.
+* **Seamless loop.** The ending holds for `outro` seconds, then the last
+  `loop_xfade` seconds crossfade into frame 0 (picture) and fade to silence
+  (audio), so Shorts' auto-replay has no visible or audible seam.
+* **Shorts safe zone.** All text stays out of the bottom 20% and the right
+  12% of the frame, where the Shorts UI sits. The hook is laid out inside
+  the safe area, and the renderer moves any label that would cross into it.
 
 ## Formats
 
@@ -99,7 +110,7 @@ class MyFormat(Simulation):
     def setup(self):                     # build the world; self.p = params, self.rng = seeded RNG
         ...
     def step(self, dt):                  # advance; self.emit("bounce", x, y, strength) for sounds,
-        ...                              # self.finish("escape" | "trapped") to end (outro follows)
+        ...                              # self.finish("escape" | "trapped") to end (hold + loop follow)
     def snapshot(self) -> Scene:         # draw the current state with scene primitives (read-only!)
         return Scene(items=[Circle(540, 960, 40, (255, 80, 120), glow=0.6)])
 ```
@@ -112,36 +123,49 @@ the sound sets understand: `bounce`, `spawn`, `hit`, `sealed`, `escape`,
 
 ### shrinking_ring
 
-A ball bounces inside a slowly rotating, slowly shrinking ring with a gap.
-Every bounce plays the next note and grows the ball (`mode: grow`) or adds a
-ball (`mode: spawn`). Endings:
+A ball bounces inside a slowly rotating, shrinking ring with a gap (the
+ring spans ~85% of the frame width). Every bounce plays the next note and
+grows the ball (`mode: grow`) or adds a ball (`mode: spawn`).
 
-* **escape burst**: a ball slips through the gap, the ring shatters, "ESCAPED!"
-* **trapped freeze**: the ball fills the ring (or time runs out), the frame
-  freezes and desaturates, "TRAPPED!"
+* **Hook**: the video opens with the ball already in flight (a 0.25 s pre-roll
+  feeds its trail on frame 0) and the first bounce lands within
+  `first_bounce` (0.16–0.28 s).
+* **Build**: the ring shrinks steadily, then the squeeze accelerates over the
+  final third (`ring_squeeze`). The ring tints red as the ball's diameter
+  approaches the gap's width, and is fully red once the ball can't fit.
+* **Escape burst**: a ball slips through the gap; `slowmo` seconds (0.4) of
+  quarter-speed slow motion with a rising sweep, zooming in on the gap, then
+  the ring shatters: "ESCAPED!"
+* **Trapped freeze**: the ball fills the ring (or time runs out); the frame
+  freezes and desaturates: "TRAPPED!"
 
 Balls keep a constant energy, so `energy` (reach height above the center)
 decides how high they can climb. The gap starts near the top, out of reach.
 The ring's spin and shrink bring it into reach while the ball grows, so it
-is a race: once the ball is wider than the gap (`sealed`, the ring tints red)
-it can no longer escape. Main params: `mode`, `ring_radius`, `ring_shrink`,
-`gap`, `spin`, `gravity`, `energy`, `ball_radius`, `grow` (`auto` scales
-with duration), `max_balls`, `spawn_from`, `trail`, `counter`,
-`escape_text`, `trapped_text`, `outro`, `tries`, `pace_window`.
+is a race. Main params: `mode`, `ring_radius`, `ring_shrink`,
+`ring_squeeze`, `gap`, `spin`, `gravity`, `energy`, `ball_radius`,
+`first_bounce`, `grow` (`auto` scales with duration), `slowmo`,
+`max_balls`, `spawn_from`, `trail`, `counter`, `escape_text`,
+`trapped_text`, `outro`, `loop_xfade`, `tries`, `pace_window`.
 
 ## Sound sets
 
 | set | each bounce | options |
 | --- | --- | --- |
-| `pentatonic` | next note of a pentatonic pattern | `key`, `scale` (major/minor), `pattern` (updown/up/down/walk/random), `instrument` (marimba/glock/kalimba/pluck/chime), `octave`, `octaves` |
+| `pentatonic` | next note of a pentatonic pattern | `key`, `scale` (major/minor), `pattern` (updown/up/down/walk/random), `instrument` (marimba/glock/kalimba/pluck/chime), `octave`, `octave_up` (auto/true/false), `octaves` |
 | `melody` | next note of a public-domain melody | `melody` (ode_to_joy, fur_elise, twinkle, greensleeves, canon_in_d, frere_jacques, brahms_lullaby, mountain_king, amazing_grace, mary_lamb, random), `instrument`, `transpose`, `double` |
-| `tactile` | pitched bubble pop + click (dry, ASMR) | `key`, `pitch` (scale/size) |
+| `tactile` | pitched bubble pop + click (dry, ASMR) | `key`, `pitch` (scale/size), `octave`, `octave_up` |
 | `ambient` | soft chime on the current chord over slow pad chords | `key`, `chord_seconds`, `instrument` |
 
+`octave_up: auto` (the default) moves the pattern up an octave when its
+lowest note would sit below ~200 Hz, which phone speakers barely reproduce;
+`true`/`false` force it.
+
 All sets also take `min_gap` (minimum seconds between notes when bounces
-pile up) and `volume`, and have their own escape (boom + whoosh + run + chord)
-and freeze (thump + glassy shimmer + chord) finales. The mix is loudness
-normalized and soft limited below -0.6 dBFS.
+pile up) and `volume`, and have their own slow-motion riser, escape (boom +
+whoosh + run + chord) and freeze (thump + glassy shimmer + chord) finales.
+The mix is loudness normalized, soft limited below -0.6 dBFS, and fades to
+silence under the loop crossfade.
 
 ## Output
 
@@ -155,6 +179,7 @@ normalized and soft limited below -0.6 dBFS.
 pip install pytest && python -m pytest -q
 ```
 
-Covers determinism, preview/final parity, motion on frame 1, frame-exact note
-onsets, every sound set, config validation, and an end-to-end
+Covers determinism, preview/final parity (including slow motion), the
+mid-flight opening, the loop seam, safe-zone text, frame-exact note onsets,
+every sound set, config validation, and an end-to-end
 batch → keepers → final run (needs ffmpeg).

@@ -2,7 +2,7 @@ format: shrinking_ring
 seed: 3
 palette: sunset
 sound_set: melody
-duration: 40
+duration: 28
 hook_text: "Every bounce plays the next note"
 
 sound:

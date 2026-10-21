@@ -7,10 +7,15 @@ spawns a new ball (``mode: spawn``). The video ends with
 * a trapped freeze - the ball fills the ring (grow) or the ring packs full
   (spawn), or time runs out.
 
-Balls keep a constant mechanical energy (they are re-energised on every wall
-bounce), so ``energy`` sets how high up the ring they can reach. With the gap
-starting near the top, the ring's rotation and shrink decide when the gap comes
-within reach; ball growth decides whether the ball still fits through it.
+Balls keep a constant mechanical energy, so ``energy`` sets how high up the
+ring they can reach. With the gap starting near the top, the ring's rotation
+and shrink decide when the gap comes within reach; ball growth decides whether
+the ball still fits through it. The ring tints red as the ball's diameter
+approaches the gap's width, and the shrink speeds up over the final third.
+
+The video opens mid-flight (``preroll``) with the first bounce inside
+``first_bounce`` seconds. An escape plays ``slowmo`` seconds of quarter-speed
+slow motion as the ball passes the gap, timed from the rehearsal, then bursts.
 """
 
 from __future__ import annotations
@@ -21,9 +26,13 @@ import pymunk
 
 from ..palettes import mix
 from ..scene import Arc, Circle, Effects, Label, Particle, Ripple, Scene
-from .base import Simulation
+from ..timeline import Event
+from .base import PHYSICS_HZ, Simulation
 
 BALL, RING = 1, 2
+GROW_AUTO = 85.0  # grow = GROW_AUTO / seconds of action (calibrated for the default ring)
+SLOW = 4  # video ticks per physics step during slow motion (quarter speed)
+DANGER = (255, 60, 80)  # ring tint as the ball outgrows the gap
 
 
 class _Ball:
@@ -70,26 +79,35 @@ def _ease_out(k: float) -> float:
     return 1.0 - (1.0 - k) ** 3
 
 
+def _smooth(k: float) -> float:
+    k = min(1.0, max(0.0, k))
+    return k * k * (3 - 2 * k)
+
+
 class ShrinkingRing(Simulation):
     name = "shrinking_ring"
     description = "Ball bounces in a rotating, shrinking ring with a gap; grows or multiplies per bounce."
+    preroll = 0.25  # the video opens with the ball already in flight
     defaults = {
         "mode": "grow",  # grow | spawn
-        "center": [540, 1010],
-        "ring_radius": 380.0,  # inner radius at t=0 (px)
-        "ring_min_radius": 240.0,
-        "ring_shrink": 3.0,  # px per second
+        "center": [540, 940],
+        "ring_radius": 452.0,  # inner radius at t=0 (px); the ring spans ~85% of the width
+        "ring_min_radius": 230.0,
+        "ring_shrink": 3.0,  # steady shrink (px/s)
+        "ring_squeeze": 90.0,  # extra shrink over the final third, accelerating (px)
         "ring_width": 14.0,
         "gap": 62.0,  # gap size (degrees)
-        "spin": [1.0, 4.0],  # rotation speed range (deg/s); direction is random
+        "spin": [2.5, 6.0],  # rotation speed range (deg/s); direction is random
         "gap_start": [-125.0, -55.0],  # initial gap angle range (deg; -90 is straight up)
-        "gravity": 4000.0,
-        "energy": [90.0, 150.0],  # how far above the ring center balls can reach (px)
-        "ball_radius": 22.0,
+        "gravity": 6000.0,
+        "energy": [105.0, 180.0],  # how far above the ring center balls can reach (px)
+        "ball_radius": 44.0,
+        "first_bounce": [0.16, 0.28],  # first bounce lands this many seconds into the video
         "grow": "auto",  # px added to the radius per bounce (grow mode); auto scales with duration
-        "grow_speed": 120.0,  # max visual growth rate (px/s)
+        "grow_speed": 140.0,  # max visual growth rate (px/s)
         "fill": 0.93,  # grow mode: trapped once ball radius >= fill * ring radius
-        "spawn_radius": 15.0,  # spawn mode: radius of new balls
+        "slowmo": 0.4,  # escape: seconds of quarter-speed slow motion before the burst (0 = off)
+        "spawn_radius": 16.0,  # spawn mode: radius of new balls
         "spawn_from": "hero",  # hero: only the first ball's bounces spawn | any
         "spawn_cooldown": 0.15,  # spawn mode with spawn_from=any (s)
         "max_balls": 160,
@@ -98,7 +116,6 @@ class ShrinkingRing(Simulation):
         "counter": True,  # bounce / ball counter under the ring
         "escape_text": "ESCAPED!",  # shown after an escape ("" to hide)
         "trapped_text": "TRAPPED!",  # shown after a trapped freeze ("" to hide)
-        "outro": 2.2,  # seconds after the ending
     }
 
     # ------------------------------------------------------------------ setup
@@ -113,10 +130,14 @@ class ShrinkingRing(Simulation):
         self.g = float(p.gravity)
         self.h = rng.uniform(*p.energy)
         self.spin = rng.uniform(*p.spin) * rng.choice((-1.0, 1.0))
-        angle0 = rng.uniform(*p.gap_start)
+        angle0 = rng.uniform(*p.gap_start)  # gap direction at t=0
+        # The action should be over by t_end so the ending can hold and loop back.
+        self.t_end = max(4.0, self.cfg.duration - self.tail)
+        self.t_squeeze = self.t_end * 2 / 3
+        self.squeeze_k = float(p.ring_squeeze) / max(1.0, self.t_end - self.t_squeeze) ** 2
         if p.grow == "auto":
-            # Calibrated so a ball that never escapes fills the ring at ~85% of the duration.
-            self.grow = 2.2 * 30.0 / max(5.0, 0.85 * (self.cfg.duration - self.outro))
+            # Calibrated so a ball that never escapes fills the ring around the end of the action.
+            self.grow = GROW_AUTO / self.t_end
         else:
             self.grow = float(p.grow)
 
@@ -127,7 +148,7 @@ class ShrinkingRing(Simulation):
 
         body = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
         body.position = (self.cx, self.cy)
-        body.angle = math.radians(angle0)
+        body.angle = math.radians(angle0 + self.spin * self.t)  # self.t < 0 during the pre-roll
         body.angular_velocity = math.radians(self.spin)
         space.add(body)
         self.ring_body = body
@@ -158,16 +179,61 @@ class ShrinkingRing(Simulation):
         self.escape_ball: _Ball | None = None
         self.color_i = 0
 
-        # First ball starts at the center already moving (motion from frame 1),
-        # aimed downwards so the first bounce lands quickly.
-        ang = math.radians(rng.uniform(25, 155))
-        speed = self._speed_at(self.cy)
-        r = float(p.ball_radius)
-        self._add_ball(self.cx, self.cy, speed * math.cos(ang), speed * math.sin(ang), r, hero=True)
+        self._add_ball(*self._launch(), float(p.ball_radius), hero=True)
+
+        # Slow motion: the rehearsal says when (in physics time) the ball gets
+        # through. The slow stretch starts on the frame grid at or just after
+        # ``slowmo`` before that, lasts exactly ``slowmo`` seconds of video, and
+        # the burst waits for its end (at most FRAME_GRID steps after the crossing).
+        self.slow_from = self.slow_to = None
+        self.slow_flagged = False
+        if self.plan is not None and self.plan.ending == "escape" and float(p.slowmo) > 0:
+            s_e = round(self.plan.of_kind("escape")[0].data["pt"] * PHYSICS_HZ)
+            steps = round(float(p.slowmo) / SLOW * PHYSICS_HZ)
+            start = self.slow_start_step(s_e - steps)
+            self.slow_from, self.slow_to = start / PHYSICS_HZ, (start + steps) / PHYSICS_HZ
 
         space.on_collision(BALL, RING, begin=self._on_wall, pre_solve=self._on_wall_touch,
                            separate=self._on_wall_separate)
         space.on_collision(BALL, BALL, begin=self._on_ball)
+
+    def _ring_radius(self, t: float) -> float:
+        """Steady shrink, plus an accelerating squeeze over the final third."""
+        t = max(0.0, t)
+        R = self.R0 - float(self.p.ring_shrink) * t
+        if t > self.t_squeeze:
+            R -= self.squeeze_k * (t - self.t_squeeze) ** 2
+        return max(float(self.p.ring_min_radius), R)
+
+    def _launch(self) -> tuple[float, float, float, float]:
+        """Start state (at the start of the pre-roll) for a ball already in
+        flight that first hits the lower ring ``first_bounce`` seconds into the
+        video: pick the hit, then run the parabola backwards."""
+        p, rng, g = self.p, self.rng, self.g
+        r = float(p.ball_radius)
+        reach = self.R0 - r - 0.5  # ball-center distance at contact
+        for _ in range(200):
+            tau = rng.uniform(*p.first_bounce) - self.t  # flight time from launch to the hit
+            phi = math.radians(90 + rng.uniform(-50, 50))  # hit point on the lower ring
+            hx, hy = self.cx + reach * math.cos(phi), self.cy + reach * math.sin(phi)
+            speed = self._speed_at(hy)
+            a = phi + math.radians(rng.choice((-1, 1)) * rng.uniform(15, 50))
+            vx, vy = speed * math.cos(a), speed * math.sin(a)  # heading into the wall
+            x0, y0 = hx - vx * tau, hy - vy * tau + 0.5 * g * tau * tau
+            vy0 = vy - g * tau
+            inside = all(
+                math.hypot(x0 + vx * s - self.cx, y0 + vy0 * s + 0.5 * g * s * s - self.cy) < reach - 3
+                for s in (tau * i / 16 for i in range(16))
+            )
+            if inside:
+                return x0, y0, vx, vy0
+        speed = self._speed_at(self.cy)  # fallback: from the center, straight down
+        return self.cx, self.cy, 0.0, speed
+
+    def video_ticks(self) -> int:
+        if self.slow_from is not None and self.slow_from - 1e-9 <= self.t < self.slow_to - 1e-9:
+            return SLOW
+        return 1
 
     def _set_ring_radius(self, R: float) -> None:
         if self._seg_R is not None and abs(self._seg_R - R) < 0.05:
@@ -276,8 +342,14 @@ class ShrinkingRing(Simulation):
             return  # trapped / timeout: the world freezes
 
         if not self.ended:
-            self.R = max(float(p.ring_min_radius), self.R0 - float(p.ring_shrink) * t)
+            self.R = self._ring_radius(t)
             self._set_ring_radius(self.R)
+            if self.slow_from is not None and not self.slow_flagged and self.t >= self.slow_from - 1e-9:
+                # the riser in the audio runs from here to the burst
+                self.slow_flagged = self.hold_timeout = True
+                self.timeline.add(Event(t=self.vt, kind="slowmo", x=self.balls[0].body.position.x,
+                                        y=self.balls[0].body.position.y,
+                                        data={"duration": round((self.slow_to - self.t) * SLOW, 6)}))
 
         # grow mode: ease the radius towards its target
         if p.mode == "grow" and not self.ended:
@@ -389,10 +461,15 @@ class ShrinkingRing(Simulation):
         return 2 * rc * math.sin(math.radians(self.gap / 2)) - self.w
 
     def _check_escape(self, t: float) -> None:
-        limit = self.R + self.w + 1.0
+        """A ball whose center has crossed the ring line (only possible through
+        the gap) while moving outwards is through: burst."""
+        if self.slow_to is not None and self.t_next < self.slow_to - 1e-9:
+            return  # through already, but the burst lands at the end of the slow stretch
+        limit = self.R + self.w / 2 + 2.0
         for ball in self.balls:
-            pos = ball.body.position
-            if math.hypot(pos.x - self.cx, pos.y - self.cy) - ball.r > limit:
+            pos, v = ball.body.position, ball.body.velocity
+            dx, dy = pos.x - self.cx, pos.y - self.cy
+            if math.hypot(dx, dy) > limit and dx * v.x + dy * v.y > 0:
                 self._escape(ball, t)
                 return
 
@@ -425,7 +502,8 @@ class ShrinkingRing(Simulation):
         pos = ball.body.position
         self.escape_ball = ball
         ball.escaped = True
-        self.emit("escape", pos.x, pos.y, strength=1.0, ball=ball.id)
+        self.hold_timeout = False
+        self.emit("escape", pos.x, pos.y, strength=1.0, ball=ball.id, pt=round(t, 6))
         self.finish("escape")
         # Shatter the ring into flying shards.
         theta = math.degrees(self.ring_body.angle)
@@ -508,9 +586,12 @@ class ShrinkingRing(Simulation):
         if not self.shards:
             theta = math.degrees(self.ring_body.angle)
             flash = math.exp(-(t - self.last_bounce_t) / 0.16) if self.bounces else 0.0
-            color = mix(pal.ring, self.last_color, 0.75 * flash)
-            if self.sealed_t is not None and p.mode == "grow":
-                color = mix(color, (255, 70, 90), 0.35 * min(1.0, (t - self.sealed_t) / 0.6))
+            danger = 0.0
+            if p.mode == "grow":
+                # builds as the ball's diameter approaches the gap width; full once it can't fit
+                danger = _smooth((2 * self.balls[0].r / max(1.0, self._opening()) - 0.55) / 0.45)
+            color = mix(pal.ring, self.last_color, 0.75 * flash * (1 - 0.6 * danger))
+            color = mix(color, DANGER, 0.75 * danger)
             items.append(Arc(self.cx, self.cy, rc, self.w, theta + self.gap / 2, 360 - self.gap,
                              color, glow=0.35 + 0.65 * flash))
         else:
@@ -551,6 +632,17 @@ class ShrinkingRing(Simulation):
                                 id=ball.id, trail=float(p.trail) if (ball.hero or not many) else 0.0))
 
         fx = Effects(zoom_x=self.cx, zoom_y=self.cy)
+        if self.slow_from is not None and t >= self.slow_from - 1e-9:
+            # push in on the gap while time slows, ease back out after the burst
+            k = min(1.0, (t - self.slow_from) / max(1e-6, self.slow_to - self.slow_from))
+            if end_age >= 0:
+                k = 1.0 - _ease_out(end_age / 0.35)
+            gap_dir = self.ring_body.angle  # the ring stops turning once it shatters
+            # zooming about the gap itself keeps the gap (and the ball in it) in frame
+            fx.zoom = 1.0 + 0.08 * _smooth(k)
+            fx.zoom_x = self.cx + (self.R + self.w / 2) * math.cos(gap_dir)
+            fx.zoom_y = self.cy + (self.R + self.w / 2) * math.sin(gap_dir)
+            fx.vignette = 0.3 * k
         if end_age >= 0:
             if ending == "escape":
                 fx.flash = 0.85 * math.exp(-end_age / 0.12)
@@ -569,11 +661,11 @@ class ShrinkingRing(Simulation):
         if p.counter:
             value = self.bounces if p.mode == "grow" else len(self.balls)
             caption = "BOUNCES" if p.mode == "grow" else "BALLS"
-            y = self.cy + self.R0 + 135
+            y = self.cy + self.R0 + self.w + 56  # just under the ring, above the Shorts caption area
             pulse = math.exp(-(t - self.last_bounce_t) / 0.1) if self.bounces else 0.0
-            overlay.append(Label(str(value), self.cx, y, 86 * (1 + 0.08 * pulse), pal.text, weight="black",
+            overlay.append(Label(str(value), self.cx, y, 72 * (1 + 0.08 * pulse), pal.text, weight="black",
                                  stroke=pal.text_stroke, stroke_width=8))
-            overlay.append(Label(caption, self.cx, y + 58, 30, pal.text, alpha=0.75, weight="bold"))
+            overlay.append(Label(caption, self.cx, y + 46, 26, pal.text, alpha=0.75, weight="bold"))
         if end_age >= 0:
             text = p.escape_text if ending == "escape" else p.trapped_text
             if text:

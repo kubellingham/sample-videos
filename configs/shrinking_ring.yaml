@@ -4,7 +4,7 @@ format: shrinking_ring
 seed: 7
 palette: neon            # neon | sunset | ocean | forest | candy | mono | aurora | ember | random
 sound_set: pentatonic    # pentatonic | melody | tactile | ambient
-duration: 40             # seconds, maximum; pacing aims the ending at 55-100% of this
+duration: 28             # seconds, maximum; pacing aims the ending at 55-100% of this
 hook_text: "Will it escape before it fills the ring?"
 
 sound:                   # optional, see `python -m satisfy sounds`

@@ -13,7 +13,7 @@ from pathlib import Path
 class Event:
     """Something audible happened.
 
-    ``t`` is the simulation time (seconds) at which the event's result is first
+    ``t`` is the video time (seconds) at which the event's result is first
     visible. Use :func:`frame_of` to map it onto a render frame.
     """
 
@@ -37,6 +37,7 @@ class Timeline:
     end_t: float = 0.0  # time of the ending event
     length: float = 0.0  # total video length in seconds
     variant: int = 0  # physics variant chosen by pacing
+    loop_t: float = 0.0  # video time where the crossfade back into frame 0 starts
 
     def add(self, event: Event) -> Event:
         self.events.append(event)
@@ -54,6 +55,7 @@ class Timeline:
             "end_t": round(self.end_t, 4),
             "length": round(self.length, 4),
             "variant": self.variant,
+            "loop_t": round(self.loop_t, 4),
             "counts": self.counts(),
             "events": [
                 {**asdict(e), "t": round(e.t, 6), "x": round(e.x, 2), "y": round(e.y, 2),
@@ -68,6 +70,7 @@ class Timeline:
     @classmethod
     def load(cls, path: str | Path) -> "Timeline":
         d = json.loads(Path(path).read_text())
-        tl = cls(ending=d["ending"], end_t=d["end_t"], length=d["length"], variant=d.get("variant", 0))
+        tl = cls(ending=d["ending"], end_t=d["end_t"], length=d["length"], variant=d.get("variant", 0),
+                 loop_t=d.get("loop_t", 0.0))
         tl.events = [Event(**e) for e in d["events"]]
         return tl

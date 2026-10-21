@@ -46,3 +46,37 @@ def test_melodies_parse():
     for name in MELODIES:
         notes = melody_midi(name)
         assert len(notes) >= 8 and all(40 <= n <= 90 for n in notes)
+
+
+def test_audio_fades_out_into_the_loop():
+    tl = _timeline(Event(0.3, "bounce"), Event(2.0, "freeze"), length=4.0)
+    tl.loop_t = 3.5
+    audio = render_audio(tl, "pentatonic", {}, 1, 60, 240)
+    i0 = int(3.5 * SR)
+    assert np.abs(audio[:, -8:]).max() < 1e-3  # silent at the seam
+    assert np.abs(audio[:, -SR // 20:]).max() < np.abs(audio[:, i0 - SR // 10: i0]).max()
+
+
+@pytest.mark.parametrize("name", ["pentatonic", "tactile"])
+def test_slowmo_riser_builds_into_the_burst(name):
+    tl = _timeline(Event(1.0, "slowmo", data={"duration": 0.4}), length=3.0)
+    audio = np.abs(render_audio(tl, name, {}, 2, 60, 180)).max(axis=0)
+    start = 60 * SR // 60
+    early, late = audio[start: start + SR // 10].max(), audio[start + 3 * SR // 10: start + 4 * SR // 10].max()
+    assert late > 2 * early > 0
+
+
+def test_octave_up_option():
+    from satisfy.audio.melodies import midi_to_hz
+    from satisfy.audio.sound_sets import Pentatonic, Tactile
+
+    low = lambda s: midi_to_hz(min(s.notes))  # noqa: E731
+    assert low(Pentatonic({"key": "C", "octave": 4}, 1)) == pytest.approx(261.6, abs=0.1)  # auto: no shift needed
+    assert low(Pentatonic({"key": "C", "octave": 3}, 1)) >= 200  # auto shifts up
+    assert low(Pentatonic({"key": "C", "octave": 3, "octave_up": False}, 1)) < 200
+    assert low(Pentatonic({"key": "C", "octave": 4, "octave_up": True}, 1)) == pytest.approx(523.3, abs=0.1)
+    pop = lambda s: midi_to_hz(min(s.notes) - 12)  # noqa: E731  (tactile pops sound an octave below)
+    assert pop(Tactile({"key": "C"}, 1)) >= 200
+    assert pop(Tactile({"key": "C", "octave_up": False}, 1)) < 200
+    with pytest.raises(ValueError):
+        Pentatonic({"octave_up": "sometimes"}, 1)

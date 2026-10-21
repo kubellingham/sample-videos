@@ -17,7 +17,7 @@ class VideoConfig:
     seed: int = 1
     palette: str | dict = "neon"
     sound_set: str = "pentatonic"
-    duration: float = 40.0  # maximum length; the video may end earlier
+    duration: float = 28.0  # maximum length; the video may end earlier
     hook_text: str = ""
     sound: dict = field(default_factory=dict)  # options for the sound set
     params: dict = field(default_factory=dict)  # options for the format
@@ -55,7 +55,7 @@ def from_dict(d: dict, name: str = "") -> VideoConfig:
         seed=int(d.get("seed", 1)),
         palette=d.get("palette", "neon"),
         sound_set=str(d.get("sound_set", "pentatonic")),
-        duration=float(d.get("duration", 40.0)),
+        duration=float(d.get("duration", 28.0)),
         hook_text=str(d.get("hook_text") or ""),
         sound=dict(d.get("sound") or {}),
         params=dict(d.get("params") or {}),

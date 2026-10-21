@@ -132,6 +132,27 @@ def noise_swell(dur: float, center: float, width: float, rise: float, fall: floa
     return sig * env * vel
 
 
+def riser(dur: float, top: float, seed: int = 0) -> np.ndarray:
+    """Rising sweep for slow motion: detuned tones gliding up three octaves to
+    ``top`` Hz with an accelerating crescendo, over a brightening noise swell.
+    It ends exactly at ``dur`` (the moment of the burst)."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    k = t / max(dur, 1e-6)
+    f = top * 2.0 ** (-3.0 * (1 - k) ** 1.5)  # glide up, fastest at the end
+    out = np.zeros(n)
+    for detune, amp in ((1.0, 1.0), (1.006, 0.7), (0.994, 0.7), (2.0, 0.25)):
+        phase = 2 * np.pi * np.cumsum(f * detune) / SR
+        out += amp * (np.sin(phase) + 0.3 * np.sin(2 * phase) + 0.12 * np.sin(3 * phase))
+    out /= np.abs(out).max() + 1e-9
+    out *= k ** 1.6  # crescendo
+    out += 0.6 * noise_swell(dur, 1200, 0.9, dur, 0.02, seed=seed, sweep=3.0)[:n]
+    tail = min(n, int(0.004 * SR))
+    if tail:
+        out[-tail:] *= np.linspace(1, 0, tail)  # no click at the cut
+    return out * 0.6
+
+
 def pad_chord(freqs: list[float], dur: float, attack: float = 1.2, release: float = 1.6, vel: float = 1.0,
               seed: int = 0, brightness: float = 1.0) -> np.ndarray:
     """Warm detuned additive pad. Returns stereo (2, n)."""

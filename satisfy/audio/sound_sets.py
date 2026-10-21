@@ -21,6 +21,7 @@ from .melodies import MELODIES, key_to_pc, melody_midi, midi_to_hz
 from .synth import SR, Mixer
 
 KEYS = ["C", "D", "E", "F", "G", "A"]
+LOW_HZ = 200.0  # octave_up: auto shifts patterns whose lowest note is below this
 SCALES = {"major": [0, 2, 4, 7, 9], "minor": [0, 3, 5, 7, 10]}
 TRIADS = {"major": [0, 4, 7, 12], "minor": [0, 3, 7, 12]}
 
@@ -87,6 +88,12 @@ class SoundSet:
         mix.add(synth.thump(midi_to_hz(root - 24), dur=0.8), start, gain=0.5)
         self.play(mix, root - 12, start, 0.45)
 
+    def on_slowmo(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        """Rising sweep through the slow motion, landing on the escape burst."""
+        dur = float(e.data.get("duration", 0.4))
+        top = midi_to_hz(self.final_chord()[0] + 24)
+        mix.add(synth.riser(dur, top, seed=self.seed), start, gain=0.55, pan=pan * 0.5, send=0.5)
+
     def on_escape(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         mix.add(synth.thump(55, dur=1.2), start, gain=0.9)
         mix.add(synth.noise_swell(1.6, 700, 0.7, 0.08, 0.45, seed=self.seed, sweep=2.5), start, gain=0.35, pan=pan)
@@ -138,7 +145,25 @@ class SoundSet:
                 if handler is not None:
                     handler(mix, e, start, pan)
         audio = mix.finish(self.reverb_mix, self.reverb_time, seed=self.seed)
+        # Fade out under the picture's crossfade into frame 0, so the loop is seamless:
+        # the last sample is silent and the video restarts on near-silence.
+        if 0 < timeline.loop_t < n_samples / SR:
+            i0 = frame_of(timeline.loop_t, fps) * SR // fps
+            audio[:, i0:] *= np.cos(np.linspace(0.0, np.pi / 2, n_samples - i0))
         return audio * float(self.o.volume)
+
+    def octave_shift(self, lowest_midi: int) -> int:
+        """Semitones to add for the ``octave_up`` option: ``true`` always shifts
+        up an octave, ``false`` never, ``auto`` when the lowest note would sit
+        below ~200 Hz (thin on phone speakers)."""
+        v = str(getattr(self.o, "octave_up", "auto")).strip().lower()
+        if v in ("true", "yes", "on", "1"):
+            return 12
+        if v in ("false", "no", "off", "0"):
+            return 0
+        if v != "auto":
+            raise ValueError("octave_up must be auto, true or false")
+        return 12 if midi_to_hz(lowest_midi) < LOW_HZ else 0
 
 
 def _pick_key(o, rng) -> int:
@@ -153,6 +178,7 @@ class Pentatonic(SoundSet):
         "key": "random",  # C, D, Eb, ... or random (from the seed)
         "scale": "major",  # major | minor
         "octave": 4,
+        "octave_up": "auto",  # auto: up an octave if the lowest note is below ~200 Hz | true | false
         "octaves": 2,
         "pattern": "updown",  # updown | up | down | walk | random
         "instrument": "marimba",  # marimba | glock | kalimba | pluck | chime
@@ -161,6 +187,7 @@ class Pentatonic(SoundSet):
     def setup(self) -> None:
         o = self.o
         self.root = 12 * (int(o.octave) + 1) + _pick_key(o, self.rng)
+        self.root += self.octave_shift(self.root)
         steps = SCALES[o.scale]
         self.notes = [self.root + 12 * k + s for k in range(int(o.octaves)) for s in steps]
         self.notes.append(self.root + 12 * int(o.octaves))
@@ -229,12 +256,14 @@ class Tactile(SoundSet):
         "key": "random",
         "pitch": "scale",  # scale: follow a pentatonic pattern | size: bigger ball, deeper pop
         "octave": 4,
+        "octave_up": "auto",  # auto: up an octave if the lowest pop is below ~200 Hz | true | false
     }
     reverb_mix = 0.08
     reverb_time = 0.7
 
     def setup(self) -> None:
         root = 12 * (int(self.o.octave) + 1) + _pick_key(self.o, self.rng)
+        root += self.octave_shift(root - 12)  # pops sound an octave below the pattern
         self.root = root
         self.notes = [root + 12 * k + s for k in range(2) for s in SCALES["major"]] + [root + 24]
 
@@ -251,6 +280,17 @@ class Tactile(SoundSet):
         freq *= 1.0 + self.rng.uniform(-0.015, 0.015)
         mix.add(synth.pop(freq, seed=index), start, gain=vel * 0.9, pan=pan)
         mix.add(synth.click(1.0, bright=0.9, seed=index), start, gain=vel * 0.5, pan=pan)
+
+    def on_slowmo(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
+        """An accelerating stream of rising pops into the burst."""
+        dur = float(e.data.get("duration", 0.4))
+        n = 14
+        for i in range(n):
+            k = i / n
+            at = dur * (1 - (1 - k) ** 1.8)  # intervals shrink towards the burst
+            freq = midi_to_hz(self.root - 12) * 2 ** (2.5 * k)
+            mix.add(synth.pop(freq, seed=300 + i), start + int(at * SR), gain=0.3 + 0.5 * k, pan=pan * 0.5)
+        mix.add(synth.noise_swell(dur + 0.05, 2500, 0.7, dur, 0.04, seed=self.seed, sweep=1.5), start, gain=0.2)
 
     def on_escape(self, mix: Mixer, e: Event, start: int, pan: float) -> None:
         mix.add(synth.pop(140, seed=1), start, gain=1.0)

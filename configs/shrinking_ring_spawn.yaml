@@ -2,7 +2,7 @@ format: shrinking_ring
 seed: 1
 palette: candy
 sound_set: tactile
-duration: 40
+duration: 28
 hook_text: "Every bounce adds a ball. Can they escape?"
 
 params:
