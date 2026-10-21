@@ -1,0 +1,2952 @@
+{
+ "config": {
+  "name": "polyrhythm_harmony",
+  "format": "polyrhythm_loop",
+  "seed": 1,
+  "palette": "aurora",
+  "sound_set": "harmony",
+  "duration": 45.0,
+  "hook_text": "Every dot is on the beat",
+  "sound": {
+   "key": "C",
+   "progression": "I-V-vi-IV",
+   "tempo": "auto",
+   "instrument": "celesta"
+  },
+  "params": {
+   "rings": 12
+  }
+ },
+ "summary": {
+  "file": "polyrhythm_harmony_seed1.mp4",
+  "seed": 1,
+  "format": "polyrhythm_loop",
+  "quality": "final",
+  "width": 1080,
+  "height": 1920,
+  "fps": 60,
+  "frames": 2400,
+  "length": 40.0,
+  "ending": "loop",
+  "end_t": 40.0,
+  "variant": 0,
+  "palette": "aurora",
+  "counts": {
+   "note": 220
+  },
+  "render_seconds": 118.3
+ },
+ "timeline": {
+  "ending": "loop",
+  "end_t": 40.0,
+  "length": 40.0,
+  "variant": 0,
+  "loop_t": 40.0,
+  "periodic": true,
+  "audio_timing": "exact",
+  "music": {
+   "tonic": 0,
+   "tempo": 72.0,
+   "chords": [
+    {
+     "t": 0.0,
+     "root": 0,
+     "quality": "maj",
+     "name": "I"
+    },
+    {
+     "t": 10.0,
+     "root": 7,
+     "quality": "maj",
+     "name": "V"
+    },
+    {
+     "t": 20.0,
+     "root": 9,
+     "quality": "min",
+     "name": "vi"
+    },
+    {
+     "t": 30.0,
+     "root": 5,
+     "quality": "maj",
+     "name": "IV"
+    }
+   ],
+   "cycle": 40.0,
+   "beats_per_bar": 4.0,
+   "mode": "major",
+   "progression": "I-V-vi-IV",
+   "source": "progression",
+   "offset": 0.0,
+   "key": "C",
+   "bars": 12,
+   "sixteenths": 192
+  },
+  "counts": {
+   "note": 220
+  },
+  "events": [
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 595.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 0,
+     "degree": 0,
+     "register": 0.0,
+     "pan": 0.1
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 623.64,
+    "strength": 0.75,
+    "data": {
+     "ring": 1,
+     "degree": 1,
+     "register": 0.0909,
+     "pan": -0.127
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 652.27,
+    "strength": 0.75,
+    "data": {
+     "ring": 2,
+     "degree": 2,
+     "register": 0.1818,
+     "pan": 0.155
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 680.91,
+    "strength": 0.75,
+    "data": {
+     "ring": 3,
+     "degree": 3,
+     "register": 0.2727,
+     "pan": -0.182
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 0.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 0.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 0.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 1.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 1.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 1.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 1.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 1.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 2.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 2.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 2.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 2.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 3.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 3.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 3.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 3.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 3.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 3.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 4.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 4.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 5.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 5.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 5.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 6.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 6.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 6.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 6.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 6.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 6.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 6.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 7.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 7.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 7.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 7.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 8.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 8.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 8.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 8.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 8.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 9.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 9.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 680.91,
+    "strength": 0.75,
+    "data": {
+     "ring": 3,
+     "degree": 3,
+     "register": 0.2727,
+     "pan": -0.182
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 10.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 10.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 10.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 11.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 11.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 11.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 11.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 11.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 12.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 12.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 12.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 12.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 13.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 13.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 652.27,
+    "strength": 0.75,
+    "data": {
+     "ring": 2,
+     "degree": 2,
+     "register": 0.1818,
+     "pan": 0.155
+    }
+   },
+   {
+    "t": 13.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 13.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 13.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 13.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 13.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 13.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 14.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 14.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 15.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 15.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 15.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 16.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 16.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 16.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 16.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 16.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 16.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 17.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 17.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 17.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 17.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 18.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 18.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 18.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 18.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 18.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 19.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 19.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 623.64,
+    "strength": 0.75,
+    "data": {
+     "ring": 1,
+     "degree": 1,
+     "register": 0.0909,
+     "pan": -0.127
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 680.91,
+    "strength": 0.75,
+    "data": {
+     "ring": 3,
+     "degree": 3,
+     "register": 0.2727,
+     "pan": -0.182
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 20.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 20.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 20.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 21.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 21.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 21.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 21.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 21.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 22.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 22.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 22.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 22.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 23.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 23.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 23.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 23.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 23.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 23.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 24.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 24.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 25.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 25.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 25.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 26.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 26.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 26.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 652.27,
+    "strength": 0.75,
+    "data": {
+     "ring": 2,
+     "degree": 2,
+     "register": 0.1818,
+     "pan": 0.155
+    }
+   },
+   {
+    "t": 26.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 26.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 26.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 26.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 26.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 27.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 27.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 27.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 27.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 28.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 28.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 28.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 28.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 28.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 29.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 29.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 680.91,
+    "strength": 0.75,
+    "data": {
+     "ring": 3,
+     "degree": 3,
+     "register": 0.2727,
+     "pan": -0.182
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 30.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 30.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 30.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 31.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 31.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 31.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 31.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 31.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 32.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 32.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 32.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 32.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 33.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 33.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 709.55,
+    "strength": 0.75,
+    "data": {
+     "ring": 4,
+     "degree": 4,
+     "register": 0.3636,
+     "pan": 0.209
+    }
+   },
+   {
+    "t": 33.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 33.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 33.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 33.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 33.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 34.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 34.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 738.18,
+    "strength": 0.75,
+    "data": {
+     "ring": 5,
+     "degree": 5,
+     "register": 0.4545,
+     "pan": -0.236
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 35.0,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 35.625,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 35.833333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 36.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 36.25,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 36.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 766.82,
+    "strength": 0.75,
+    "data": {
+     "ring": 6,
+     "degree": 6,
+     "register": 0.5455,
+     "pan": 0.264
+    }
+   },
+   {
+    "t": 36.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 36.666667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 36.875,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 37.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 795.45,
+    "strength": 0.75,
+    "data": {
+     "ring": 7,
+     "degree": 7,
+     "register": 0.6364,
+     "pan": -0.291
+    }
+   },
+   {
+    "t": 37.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 37.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 37.5,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 38.125,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 38.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 824.09,
+    "strength": 0.75,
+    "data": {
+     "ring": 8,
+     "degree": 8,
+     "register": 0.7273,
+     "pan": 0.318
+    }
+   },
+   {
+    "t": 38.333333,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 38.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 852.73,
+    "strength": 0.75,
+    "data": {
+     "ring": 9,
+     "degree": 9,
+     "register": 0.8182,
+     "pan": -0.345
+    }
+   },
+   {
+    "t": 38.75,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   },
+   {
+    "t": 39.166667,
+    "kind": "note",
+    "x": 540.0,
+    "y": 881.36,
+    "strength": 0.75,
+    "data": {
+     "ring": 10,
+     "degree": 10,
+     "register": 0.9091,
+     "pan": 0.373
+    }
+   },
+   {
+    "t": 39.375,
+    "kind": "note",
+    "x": 540.0,
+    "y": 910.0,
+    "strength": 0.75,
+    "data": {
+     "ring": 11,
+     "degree": 11,
+     "register": 1.0,
+     "pan": -0.4
+    }
+   }
+  ]
+ }
+}
