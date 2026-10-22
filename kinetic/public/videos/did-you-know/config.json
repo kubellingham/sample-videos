@@ -1,0 +1,9 @@
+{
+  "script": "script.txt",
+  "voice": "voice.wav",
+  "tts": { "voice": "af_heart", "speed": 0.92, "sentencePauseMs": 300 },
+  "music": "beat.wav",
+  "palette": "sunset",
+  "emphasis": [],
+  "tailSeconds": 1.3
+}

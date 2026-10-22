@@ -1,0 +1,27 @@
+{
+  "tts": {
+    "key": "9c0a76b9d1365e6b",
+    "voice": "af_heart",
+    "seconds": 28.688
+  },
+  "transcribe": {
+    "key": "0c92eeaf1dd612f4",
+    "output": "e99ae40e4800448d",
+    "model": "medium.en",
+    "anchors": 15,
+    "biasMs": -155
+  },
+  "beats": {
+    "key": "6c62c83659ae6f74",
+    "source": "beat.wav",
+    "tempo": 95.94,
+    "beats": 52
+  },
+  "mix": {
+    "key": "791a57adb3a1e048",
+    "seconds": 29.988,
+    "lufs": -14,
+    "truePeak": -1.4,
+    "duckDb": -12
+  }
+}

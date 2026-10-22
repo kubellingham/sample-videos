@@ -17,6 +17,12 @@ Samples (`configs/shrinking_ring.yaml`): [`samples/shrinking_ring_seed7.mp4`](sa
 `configs/polyrhythm_harmony.yaml`: [`samples/polyrhythm_harmony_seed1.mp4`](samples/polyrhythm_harmony_seed1.mp4)
 (the harmony engine: every hit on a 16th note, I-V-vi-IV once per cycle) and its contact sheet.
 
+**Kinetic typography** lives in its own Remotion project, [`kinetic/`](kinetic/README.md):
+voiceover (or a script, voiced locally by Kokoro) → Whisper word timings →
+bold type slamming in on the words, punching on the beat, with the music
+ducked under the voice at -14 LUFS. Sample:
+[`samples/kinetic_did-you-know.mp4`](samples/kinetic_did-you-know.mp4) and its contact sheet.
+
 ## Setup
 
 ```bash
